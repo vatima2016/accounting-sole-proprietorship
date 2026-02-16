@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Description Autocomplete - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .demo-section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            color: #2d3748;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Smart Input Container */
+        .smart-input-container {
+            position: relative;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-input.has-suggestions:focus {
+            border-radius: 8px 8px 0 0;
+        }
+        
+        /* Suggestions Dropdown */
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            border: 2px solid #667eea;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            z-index: 1000;
+            margin-top: -2px;
+            display: none;
+        }
+        
+        .suggestions-dropdown.show {
+            display: block;
+        }
+        
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .suggestion-item:hover,
+        .suggestion-item.selected {
+            background: #f7fafc;
+        }
+        
+        .suggestion-item.selected {
+            background: #edf2f7;
+            border-left: 3px solid #667eea;
+        }
+        
+        .suggestion-text {
+            flex: 1;
+            color: #2d3748;
+            font-size: 0.95em;
+        }
+        
+        .suggestion-text mark {
+            background: #fef3c7;
+            color: #92400e;
+            font-weight: 600;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        
+        .suggestion-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 15px;
+        }
+        
+        .usage-badge {
+            background: #e0e7ff;
+            color: #4338ca;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+        
+        .helper-text {
+            font-size: 0.85em;
+            color: #718096;
+            margin-top: 8px;
+        }
+        
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid #0284c7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 0.9em;
+            color: #0c4a6e;
+        }
+        
+        .info-box strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #075985;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+        
+        .info-box li {
+            margin: 5px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .stat-label {
+            font-size: 0.85em;
+            color: #718096;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .keyboard-hints {
+            background: #fffbeb;
+            border: 2px solid #fbbf24;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .keyboard-hints strong {
+            color: #92400e;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .key {
+            display: inline-block;
+            background: white;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-family: monospace;
+            font-size: 0.85em;
+            margin: 0 3px;
+        }
+        
+        .popular-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+        
+        .popular-item {
+            padding: 10px 15px;
+            background: #f7fafc;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .popular-item .name {
+            color: #2d3748;
+            font-weight: 500;
+        }
+        
+        .popular-item .count {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Smart Description Autocomplete</h1>
+        <p class="subtitle">Intelligente Vorschläge basierend auf Häufigkeit und Kategorie</p>
+        
+        <div class="info-box">
+            <strong>💡 So funktioniert es:</strong>
+            <ul>
+                <li>Wählen Sie eine Kategorie aus</li>
+                <li>Klicken Sie in das Beschreibungsfeld oder beginnen Sie zu tippen</li>
+                <li>Das System zeigt passende Vorschläge basierend auf Nutzungshäufigkeit</li>
+                <li>Neue Beschreibungen werden automatisch gespeichert</li>
+            </ul>
+        </div>
+        
+        <div class="demo-section">
+            <div class="section-title">📝 Buchung erstellen</div>
+            
+            <div class="form-group">
+                <label class="form-label">Kategorie</label>
+                <select class="form-select" id="categorySelect" onchange="categoryChanged()">
+                    <option value="">-- Bitte wählen --</option>
+                    <option value="tel">Telefon, Internet, Porto</option>
+                    <option value="office">Betriebsbedarf</option>
+                    <option value="food">Bewirtungskosten Büro</option>
+                    <option value="software">Franchise/Lizenzkosten</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Beschreibung</label>
+                <div class="smart-input-container">
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        id="descriptionInput"
+                        placeholder="Tippen Sie hier oder wählen Sie einen Vorschlag..."
+                        oninput="handleInput()"
+                        onfocus="handleFocus()"
+                        onblur="handleBlur()"
+                        onkeydown="handleKeyDown(event)"
+                        autocomplete="off"
+                    >
+                    <div class="suggestions-dropdown" id="suggestionsDropdown"></div>
+                </div>
+                <div class="helper-text">
+                    Vorschläge basieren auf vorherigen Buchungen in dieser Kategorie
+                </div>
+            </div>
+            
+            <div class="keyboard-hints">
+                <strong>⌨️ Tastatur-Navigation:</strong>
+                <span class="key">↑</span> <span class="key">↓</span> zum Navigieren •
+                <span class="key">Enter</span> zum Auswählen •
+                <span class="key">Esc</span> zum Schließen
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <div class="section-title">📊 Statistiken</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Gespeicherte Beschreibungen</div>
+                    <div class="stat-value" id="totalCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Kategorie ausgewählt</div>
+                    <div class="stat-value" id="categoryCount">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Aktuelle Vorschläge</div>
+                    <div class="stat-value" id="suggestionsCount">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <div class="section-title">🔥 Top 10 häufigste Beschreibungen</div>
+            <ul class="popular-list" id="popularList"></ul>
+        </div>
+    </div>
+    
+    <script>
+        // Mock data - in real app this comes from database
+        const mockDescriptions = {
+            tel: [
+                { description: 'Netcologne Internet', count: 45 },
+                { description: 'Freenet Mobilfunk', count: 42 },
+                { description: 'Telekom Festnetz', count: 12 },
+                { description: 'O2 Mobile', count: 8 },
+                { description: 'Briefporto Deutsche Post', count: 6 },
+            ],
+            office: [
+                { description: 'Büromaterial Amazon', count: 28 },
+                { description: 'Druckerpapier', count: 15 },
+                { description: 'Stifte und Marker', count: 12 },
+                { description: 'USB-Sticks', count: 8 },
+                { description: 'Ordner und Mappen', count: 7 },
+            ],
+            food: [
+                { description: 'Kaffee für Büro', count: 36 },
+                { description: 'Tee für Büro', count: 18 },
+                { description: 'Wasser Flaschen', count: 14 },
+                { description: 'Kekse für Meetings', count: 9 },
+            ],
+            software: [
+                { description: 'Kultura SW Paket', count: 52 },
+                { description: 'Microsoft 365', count: 12 },
+                { description: 'Adobe Creative Cloud', count: 8 },
+                { description: 'Dropbox Business', count: 6 },
+            ]
+        };
+        
+        let selectedIndex = -1;
+        let currentSuggestions = [];
+        let currentCategory = '';
+        
+        function categoryChanged() {
+            const select = document.getElementById('categorySelect');
+            currentCategory = select.value;
+            const input = document.getElementById('descriptionInput');
+            input.value = '';
+            selectedIndex = -1;
+            
+            updateStats();
+            
+            if (currentCategory) {
+                input.disabled = false;
+                input.focus();
+                showSuggestions('');
+            } else {
+                input.disabled = true;
+                hideSuggestions();
+            }
+        }
+        
+        function handleInput() {
+            const input = document.getElementById('descriptionInput');
+            selectedIndex = -1;
+            showSuggestions(input.value);
+        }
+        
+        function handleFocus() {
+            if (currentCategory) {
+                const input = document.getElementById('descriptionInput');
+                showSuggestions(input.value);
+            }
+        }
+        
+        function handleBlur() {
+            // Delay to allow click on suggestion
+            setTimeout(() => {
+                hideSuggestions();
+            }, 200);
+        }
+        
+        function handleKeyDown(event) {
+            const dropdown = document.getElementById('suggestionsDropdown');
+            if (!dropdown.classList.contains('show')) return;
+            
+            switch(event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    if (selectedIndex < currentSuggestions.length - 1) {
+                        selectedIndex++;
+                        updateSelection();
+                    }
+                    break;
+                    
+                case 'ArrowUp':
+                    event.preventDefault();
+                    if (selectedIndex > 0) {
+                        selectedIndex--;
+                        updateSelection();
+                    }
+                    break;
+                    
+                case 'Enter':
+                    event.preventDefault();
+                    if (selectedIndex >= 0) {
+                        selectSuggestion(currentSuggestions[selectedIndex]);
+                    }
+                    break;
+                    
+                case 'Escape':
+                    hideSuggestions();
+                    break;
+            }
+        }
+        
+        function showSuggestions(query) {
+            if (!currentCategory) return;
+            
+            const descriptions = mockDescriptions[currentCategory] || [];
+            
+            // Filter based on query
+            currentSuggestions = descriptions.filter(d => 
+                d.description.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            const dropdown = document.getElementById('suggestionsDropdown');
+            const input = document.getElementById('descriptionInput');
+            
+            if (currentSuggestions.length === 0) {
+                hideSuggestions();
+                return;
+            }
+            
+            dropdown.innerHTML = currentSuggestions.map((item, index) => `
+                <div class="suggestion-item ${index === selectedIndex ? 'selected' : ''}" 
+                     onclick="selectSuggestion(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                    <div class="suggestion-text">
+                        ${highlightMatch(item.description, query)}
+                    </div>
+                    <div class="suggestion-meta">
+                        <span class="usage-badge">${item.count}× verwendet</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            dropdown.classList.add('show');
+            input.classList.add('has-suggestions');
+            
+            updateStats();
+        }
+        
+        function hideSuggestions() {
+            const dropdown = document.getElementById('suggestionsDropdown');
+            const input = document.getElementById('descriptionInput');
+            dropdown.classList.remove('show');
+            input.classList.remove('has-suggestions');
+            selectedIndex = -1;
+            updateStats();
+        }
+        
+        function updateSelection() {
+            showSuggestions(document.getElementById('descriptionInput').value);
+        }
+        
+        function selectSuggestion(item) {
+            const input = document.getElementById('descriptionInput');
+            input.value = item.description;
+            hideSuggestions();
+            input.focus();
+            
+            // Increment usage count (in real app, this would update database)
+            item.count++;
+            updatePopularList();
+        }
+        
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            
+            const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+        
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        function updateStats() {
+            // Total descriptions
+            const total = Object.values(mockDescriptions).reduce((sum, arr) => sum + arr.length, 0);
+            document.getElementById('totalCount').textContent = total;
+            
+            // Category count
+            const catCount = currentCategory ? mockDescriptions[currentCategory].length : '--';
+            document.getElementById('categoryCount').textContent = catCount;
+            
+            // Current suggestions
+            document.getElementById('suggestionsCount').textContent = currentSuggestions.length;
+        }
+        
+        function updatePopularList() {
+            // Combine all descriptions and sort by count
+            const allDescriptions = Object.values(mockDescriptions)
+                .flat()
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
+            
+            const list = document.getElementById('popularList');
+            list.innerHTML = allDescriptions.map(item => `
+                <li class="popular-item">
+                    <span class="name">${item.description}</span>
+                    <span class="count">${item.count}×</span>
+                </li>
+            `).join('');
+        }
+        
+        // Initialize
+        document.getElementById('descriptionInput').disabled = true;
+        updateStats();
+        updatePopularList();
+    </script>
+</body>
+</html>

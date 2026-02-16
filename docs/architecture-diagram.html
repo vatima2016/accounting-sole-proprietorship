@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookkeeping App - System Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 50px;
+            font-size: 1.2em;
+        }
+        
+        .architecture {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+        
+        .layer {
+            border: 3px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 30px;
+            background: linear-gradient(to bottom, #f7fafc, #ffffff);
+        }
+        
+        .layer-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .components {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .component {
+            background: white;
+            border: 2px solid #cbd5e0;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .component:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+        }
+        
+        .component-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .component-desc {
+            color: #4a5568;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .component ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        
+        .component li {
+            color: #718096;
+            font-size: 0.85em;
+            margin: 5px 0;
+        }
+        
+        .arrow {
+            text-align: center;
+            color: #667eea;
+            font-size: 2em;
+            margin: 20px 0;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 40px;
+        }
+        
+        .tech-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        
+        .feature {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .feature-title {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            color: #4a5568;
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .data-flow {
+            background: #edf2f7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .flow-number {
+            background: #667eea;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .flow-text {
+            color: #2d3748;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Bookkeeping Application</h1>
+        <p class="subtitle">Local Web Application with Cloud Backup</p>
+        
+        <div class="architecture">
+            <!-- Frontend Layer -->
+            <div class="layer">
+                <div class="layer-title">🖥️ Frontend Layer - React (Port 5173)</div>
+                <div class="components">
+                    <div class="component">
+                        <div class="component-title">Transaction Management</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>Quick entry form</li>
+                                <li>Auto VAT calculation</li>
+                                <li>List with filters</li>
+                                <li>Edit/Delete actions</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Reports & Analytics</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>Quarterly VAT reports</li>
+                                <li>Yearly summaries</li>
+                                <li>Charts & visualizations</li>
+                                <li>Elster CSV export</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Dashboard</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>Monthly summary</li>
+                                <li>YTD totals</li>
+                                <li>Recent transactions</li>
+                                <li>VAT liability</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Data Import</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>CSV import wizard</li>
+                                <li>Column mapping</li>
+                                <li>Validation</li>
+                                <li>Preview before import</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="arrow">↕️ HTTP/JSON API</div>
+            
+            <!-- Backend Layer -->
+            <div class="layer">
+                <div class="layer-title">⚙️ Backend Layer - Node.js + Express (Port 3001)</div>
+                <div class="components">
+                    <div class="component">
+                        <div class="component-title">REST API Endpoints</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>GET/POST/PUT/DELETE transactions</li>
+                                <li>Category management</li>
+                                <li>Report generation</li>
+                                <li>Data import/export</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Business Logic</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>VAT calculations (0%, 7%, 19%)</li>
+                                <li>Report aggregation</li>
+                                <li>Data validation</li>
+                                <li>Category management</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Export Services</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>CSV generation</li>
+                                <li>Excel export</li>
+                                <li>Elster format</li>
+                                <li>Backup creation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="arrow">↕️ SQL Queries</div>
+            
+            <!-- Database Layer -->
+            <div class="layer">
+                <div class="layer-title">💾 Database Layer - SQLite</div>
+                <div class="components">
+                    <div class="component">
+                        <div class="component-title">transactions</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>Date, type, amounts</li>
+                                <li>VAT rate & amount</li>
+                                <li>Category reference</li>
+                                <li>Invoice number</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">categories</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>Income categories (2)</li>
+                                <li>Expense categories (10)</li>
+                                <li>Type, sort order</li>
+                                <li>Active status</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">vat_payments</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>Quarterly tracking</li>
+                                <li>Payment dates</li>
+                                <li>Amount paid</li>
+                                <li>Notes</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">settings</div>
+                        <div class="component-desc">
+                            <ul>
+                                <li>App configuration</li>
+                                <li>User preferences</li>
+                                <li>Metadata</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="arrow">↕️ File System Sync</div>
+            
+            <!-- Storage Layer -->
+            <div class="layer">
+                <div class="layer-title">☁️ Cloud Backup - Google Drive</div>
+                <div class="components">
+                    <div class="component">
+                        <div class="component-title">Automatic Sync</div>
+                        <div class="component-desc">
+                            Google Drive Desktop syncs the database file automatically
+                            <ul>
+                                <li>bookkeeping.db (~1-5 MB)</li>
+                                <li>Real-time sync</li>
+                                <li>Version history</li>
+                                <li>Access from anywhere</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">Manual Backups</div>
+                        <div class="component-desc">
+                            Timestamped backup copies for extra safety
+                            <ul>
+                                <li>backups/bookkeeping_YYYY-MM-DD.db</li>
+                                <li>Before major changes</li>
+                                <li>Monthly archives</li>
+                                <li>Easy restore</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-title">CSV Exports</div>
+                        <div class="component-desc">
+                            Report exports saved to Drive
+                            <ul>
+                                <li>Elster VAT reports</li>
+                                <li>Yearly summaries</li>
+                                <li>Transaction exports</li>
+                                <li>Tax consultant reports</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 50px;">
+            <h2 style="color: #2d3748; margin-bottom: 20px;">🛠️ Technology Stack</h2>
+            <div class="tech-stack">
+                <div class="tech-item">React 18+</div>
+                <div class="tech-item">Vite</div>
+                <div class="tech-item">TailwindCSS</div>
+                <div class="tech-item">Node.js 18+</div>
+                <div class="tech-item">Express.js</div>
+                <div class="tech-item">SQLite3</div>
+                <div class="tech-item">Papa Parse</div>
+                <div class="tech-item">date-fns</div>
+                <div class="tech-item">Recharts</div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 50px;">
+            <h2 style="color: #2d3748; margin-bottom: 20px;">✨ Key Features</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-title">German Bookkeeping</div>
+                    <ul class="feature-list">
+                        <li>10 expense categories</li>
+                        <li>2 income categories</li>
+                        <li>VAT: 0%, 7%, 19%</li>
+                        <li>Elster-compatible exports</li>
+                    </ul>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Smart Data Entry</div>
+                    <ul class="feature-list">
+                        <li>Auto VAT calculation</li>
+                        <li>Category dropdown</li>
+                        <li>Date picker</li>
+                        <li>Invoice tracking</li>
+                    </ul>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Reports</div>
+                    <ul class="feature-list">
+                        <li>Quarterly VAT</li>
+                        <li>Yearly summary</li>
+                        <li>CSV export</li>
+                        <li>Charts & graphs</li>
+                    </ul>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Data Safety</div>
+                    <ul class="feature-list">
+                        <li>Local storage</li>
+                        <li>Google Drive backup</li>
+                        <li>Version history</li>
+                        <li>Easy restore</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="data-flow">
+            <h2 style="color: #2d3748; margin-bottom: 20px;">🔄 Typical Data Flow</h2>
+            
+            <div class="flow-step">
+                <div class="flow-number">1</div>
+                <div class="flow-text">
+                    <strong>User enters transaction</strong> in React form (date, description, net amount, VAT rate, category)
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">2</div>
+                <div class="flow-text">
+                    <strong>Frontend calculates VAT and Gross</strong> automatically and displays preview
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">3</div>
+                <div class="flow-text">
+                    <strong>API POST request</strong> sent to backend with transaction data
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">4</div>
+                <div class="flow-text">
+                    <strong>Backend validates</strong> and inserts data into SQLite database
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">5</div>
+                <div class="flow-text">
+                    <strong>Database file updated</strong> and saved to Google Drive sync folder
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">6</div>
+                <div class="flow-text">
+                    <strong>Google Drive syncs</strong> the updated database to cloud automatically
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="flow-number">7</div>
+                <div class="flow-text">
+                    <strong>Frontend refreshes</strong> transaction list to show the new entry
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 50px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+            <h2 style="margin-bottom: 15px;">📋 Your Bookkeeping Categories</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;">
+                <div>
+                    <h3 style="margin-bottom: 10px;">📈 Einnahmen (Income)</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">✓ Provisionen (19% VAT)</li>
+                        <li style="padding: 8px 0;">✓ Provisionen USt frei (0% VAT)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 10px;">📉 Ausgaben (Expenses)</h3>
+                    <ul style="list-style: none; padding: 0; font-size: 0.9em;">
+                        <li style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">✓ Betriebsbedarf</li>
+                        <li style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">✓ Bewirtungskosten Büro</li>
+                        <li style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">✓ Franchise/Lizenzkosten</li>
+                        <li style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">✓ Geringwertige Wirtschaftsgüter</li>
+                        <li style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">✓ Kfz-Kosten (betriebl. Anteil)</li>
+                        <li style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">✓ Kosten der Warenabgabe</li>
+                        <li style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">✓ Raumkosten</li>
+                        <li style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">✓ Telefon, Internet, Porto</li>
+                        <li style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">✓ Verkaufsprovisionen</li>
+                        <li style="padding: 5px 0;">✓ Werbekosten</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
