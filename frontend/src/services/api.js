@@ -15,7 +15,10 @@ async function request(path, options = {}) {
 export const api = {
   // Categories
   getCategories: () => request('/categories'),
+  getAllCategories: () => request('/categories?all=1'),
   getCategoriesByType: (type) => request(`/categories/${type}`),
+  createCategory: (data) => request('/categories', { method: 'POST', body: JSON.stringify(data) }),
+  updateCategory: (id, data) => request(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   // Transactions
   getTransactions: (params = {}) => {

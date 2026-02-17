@@ -2,7 +2,11 @@ const { getDatabase } = require('../config/database');
 
 function listAll(req, res) {
   const db = getDatabase();
-  const categories = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order').all();
+  const includeInactive = req.query.all === '1';
+  const sql = includeInactive
+    ? 'SELECT * FROM categories ORDER BY sort_order'
+    : 'SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order';
+  const categories = db.prepare(sql).all();
   res.json(categories);
 }
 

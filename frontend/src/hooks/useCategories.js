@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 
 let cachedCategories = null;
+
+export function clearCategoryCache() {
+  cachedCategories = null;
+}
 
 export function useCategories() {
   const [categories, setCategories] = useState(cachedCategories || []);
   const [loading, setLoading] = useState(!cachedCategories);
 
-  useEffect(() => {
-    if (cachedCategories) return;
+  const fetchCategories = useCallback(() => {
+    setLoading(true);
     api.getCategories().then((data) => {
       cachedCategories = data;
       setCategories(data);
@@ -19,8 +23,18 @@ export function useCategories() {
     });
   }, []);
 
+  useEffect(() => {
+    if (cachedCategories) return;
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const refetch = useCallback(() => {
+    clearCategoryCache();
+    fetchCategories();
+  }, [fetchCategories]);
+
   const incomeCategories = categories.filter(c => c.type === 'income');
   const expenseCategories = categories.filter(c => c.type === 'expense');
 
-  return { categories, incomeCategories, expenseCategories, loading };
+  return { categories, incomeCategories, expenseCategories, loading, refetch };
 }

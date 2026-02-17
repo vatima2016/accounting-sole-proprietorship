@@ -1,11 +1,199 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { useCategories } from '../hooks/useCategories';
+import { clearCategoryCache } from '../hooks/useCategories';
+
+function CategoryRow({ category, onSave, onToggleActive }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(category.name);
+  const [description, setDescription] = useState(category.description || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const inactive = !category.is_active;
+
+  const handleSave = async () => {
+    if (!name.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave(category.id, { name: name.trim(), description: description.trim() || null });
+      setEditing(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setName(category.name);
+    setDescription(category.description || '');
+    setEditing(false);
+    setError(null);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Escape') handleCancel();
+  };
+
+  if (editing) {
+    return (
+      <li className="flex items-center gap-2 py-1">
+        <input
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="border rounded px-2 py-1 text-sm flex-1 min-w-0"
+          placeholder="Name"
+          autoFocus
+        />
+        <input
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="border rounded px-2 py-1 text-sm flex-1 min-w-0"
+          placeholder="Beschreibung"
+        />
+        <button
+          onClick={handleSave}
+          disabled={saving || !name.trim()}
+          className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          {saving ? '...' : 'Speichern'}
+        </button>
+        <button
+          onClick={handleCancel}
+          className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1"
+        >
+          Abbrechen
+        </button>
+        {error && <span className="text-xs text-red-600">{error}</span>}
+      </li>
+    );
+  }
+
+  return (
+    <li className={`flex items-center justify-between py-1 group ${inactive ? 'opacity-50' : ''}`}>
+      <div className="flex-1 min-w-0">
+        <span className={`text-sm ${inactive ? 'line-through text-gray-400' : 'text-gray-700'}`}>{category.name}</span>
+        {category.description && (
+          <span className="text-gray-400 text-xs ml-2">{category.description}</span>
+        )}
+      </div>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {!inactive && (
+          <button
+            onClick={() => setEditing(true)}
+            className="text-xs text-blue-600 hover:text-blue-800 px-1"
+          >
+            Bearbeiten
+          </button>
+        )}
+        <button
+          onClick={() => onToggleActive(category)}
+          className={`text-xs px-1 ${inactive ? 'text-green-600 hover:text-green-800' : 'text-red-500 hover:text-red-700'}`}
+        >
+          {inactive ? 'Aktivieren' : 'Deaktivieren'}
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function NewCategoryForm({ type, onCreated }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSave = async () => {
+    if (!name.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api.createCategory({ name: name.trim(), type, description: description.trim() || null });
+      setName('');
+      setDescription('');
+      setOpen(false);
+      onCreated();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setName('');
+    setDescription('');
+    setOpen(false);
+    setError(null);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Escape') handleCancel();
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="text-xs text-blue-600 hover:text-blue-800 mt-2"
+      >
+        + Neue Kategorie
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <input
+        value={name}
+        onChange={e => setName(e.target.value)}
+        onKeyDown={handleKeyDown}
+        className="border rounded px-2 py-1 text-sm flex-1 min-w-0"
+        placeholder="Name"
+        autoFocus
+      />
+      <input
+        value={description}
+        onChange={e => setDescription(e.target.value)}
+        onKeyDown={handleKeyDown}
+        className="border rounded px-2 py-1 text-sm flex-1 min-w-0"
+        placeholder="Beschreibung"
+      />
+      <button
+        onClick={handleSave}
+        disabled={saving || !name.trim()}
+        className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 disabled:opacity-50"
+      >
+        {saving ? '...' : 'Speichern'}
+      </button>
+      <button
+        onClick={handleCancel}
+        className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1"
+      >
+        Abbrechen
+      </button>
+      {error && <span className="text-xs text-red-600 ml-1">{error}</span>}
+    </div>
+  );
+}
 
 export default function Settings() {
-  const { categories } = useCategories();
+  const [allCategories, setAllCategories] = useState([]);
   const [backupStatus, setBackupStatus] = useState(null);
   const [backing, setBacking] = useState(false);
+
+  const fetchAllCategories = () => {
+    api.getAllCategories().then(setAllCategories).catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchAllCategories();
+  }, []);
 
   const handleBackup = async () => {
     setBacking(true);
@@ -19,6 +207,32 @@ export default function Settings() {
       setBacking(false);
     }
   };
+
+  const handleSave = async (id, data) => {
+    await api.updateCategory(id, data);
+    clearCategoryCache();
+    fetchAllCategories();
+  };
+
+  const handleToggleActive = async (category) => {
+    const newActive = category.is_active ? 0 : 1;
+    if (category.is_active) {
+      if (!confirm(`Kategorie "${category.name}" deaktivieren? Sie wird aus den Dropdowns entfernt.`)) return;
+    }
+    await api.updateCategory(category.id, { is_active: newActive });
+    clearCategoryCache();
+    fetchAllCategories();
+  };
+
+  const handleCreated = () => {
+    clearCategoryCache();
+    fetchAllCategories();
+  };
+
+  const incomeActive = allCategories.filter(c => c.type === 'income' && c.is_active);
+  const incomeInactive = allCategories.filter(c => c.type === 'income' && !c.is_active);
+  const expenseActive = allCategories.filter(c => c.type === 'expense' && c.is_active);
+  const expenseInactive = allCategories.filter(c => c.type === 'expense' && !c.is_active);
 
   return (
     <div>
@@ -51,24 +265,40 @@ export default function Settings() {
           <div>
             <h3 className="text-sm font-medium text-green-700 mb-2">Einnahmen</h3>
             <ul className="space-y-1">
-              {categories.filter(c => c.type === 'income').map(c => (
-                <li key={c.id} className="text-sm text-gray-700 flex justify-between">
-                  <span>{c.name}</span>
-                  <span className="text-gray-400">{c.description}</span>
-                </li>
+              {incomeActive.map(c => (
+                <CategoryRow key={c.id} category={c} onSave={handleSave} onToggleActive={handleToggleActive} />
               ))}
             </ul>
+            {incomeInactive.length > 0 && (
+              <>
+                <div className="text-xs text-gray-400 mt-3 mb-1">Deaktiviert</div>
+                <ul className="space-y-1">
+                  {incomeInactive.map(c => (
+                    <CategoryRow key={c.id} category={c} onSave={handleSave} onToggleActive={handleToggleActive} />
+                  ))}
+                </ul>
+              </>
+            )}
+            <NewCategoryForm type="income" onCreated={handleCreated} />
           </div>
           <div>
             <h3 className="text-sm font-medium text-red-700 mb-2">Ausgaben</h3>
             <ul className="space-y-1">
-              {categories.filter(c => c.type === 'expense').map(c => (
-                <li key={c.id} className="text-sm text-gray-700 flex justify-between">
-                  <span>{c.name}</span>
-                  <span className="text-gray-400 text-xs">{c.description}</span>
-                </li>
+              {expenseActive.map(c => (
+                <CategoryRow key={c.id} category={c} onSave={handleSave} onToggleActive={handleToggleActive} />
               ))}
             </ul>
+            {expenseInactive.length > 0 && (
+              <>
+                <div className="text-xs text-gray-400 mt-3 mb-1">Deaktiviert</div>
+                <ul className="space-y-1">
+                  {expenseInactive.map(c => (
+                    <CategoryRow key={c.id} category={c} onSave={handleSave} onToggleActive={handleToggleActive} />
+                  ))}
+                </ul>
+              </>
+            )}
+            <NewCategoryForm type="expense" onCreated={handleCreated} />
           </div>
         </div>
       </section>
