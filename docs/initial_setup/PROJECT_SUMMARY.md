@@ -15,7 +15,7 @@ Complete project starter with:
 - Setup scripts
 - Installation guide
 
-**Extract to:** `/Users/impvti/tsworkspace/vatima2026/`
+**Extract to:** `~/workspace/`
 
 ### 2. **Complete Technical Specifications** (9 documents)
 
@@ -85,7 +85,7 @@ Complete project starter with:
 
 ### Step 1: Extract Project
 ```bash
-cd /Users/impvti/tsworkspace/vatima2026
+cd ~/workspace
 tar -xzf accounting-project-starter.tar.gz
 cd accounting-sole-proprietorship
 ```
@@ -150,7 +150,7 @@ git push -u origin main
 6. **Data Management**
    - SQLite local database
    - Google Drive auto-sync
-   - Import from EasyCashTax
+   - CSV import
    - Backup system
 
 ### ✅ Your Business Logic Implemented
@@ -220,9 +220,8 @@ All specifications include:
 ## ⚡ Key Advantages
 
 1. **Matches Your Workflow**
-   - Based on your EasyCashTax export
    - Uses your actual categories
-   - Brutto → Netto like you're used to
+   - Brutto → Netto calculation
 
 2. **Production Ready**
    - Error handling included

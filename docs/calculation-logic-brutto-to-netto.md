@@ -1,7 +1,7 @@
 # Calculation Logic: Brutto → Netto
 
 ## Overview
-Your bookkeeping app uses **Brutto-to-Netto calculation**, matching the workflow from EasyCashTax. Users enter the gross amount (Brutto) as shown on invoices, and the system automatically calculates the net amount (Netto) and VAT (USt).
+Your bookkeeping app uses **Brutto-to-Netto calculation**. Users enter the gross amount (Brutto) as shown on invoices, and the system automatically calculates the net amount (Netto) and VAT (USt).
 
 ---
 
@@ -63,9 +63,8 @@ USt = €45.38 - €45.38
 ### Advantages:
 1. **Matches invoice amounts** - You enter exactly what's on the invoice/receipt
 2. **No rounding errors** - Start with the correct Brutto amount
-3. **Matches EasyCashTax** - Same workflow you're used to
-4. **Real-world workflow** - Invoices show Brutto, not Netto
-5. **German accounting standard** - Most invoices display Brutto prominently
+3. **Real-world workflow** - Invoices show Brutto, not Netto
+4. **German accounting standard** - Most invoices display Brutto prominently
 
 ### Real-world Example:
 ```
@@ -375,6 +374,5 @@ System calculates:
 ✅ **Formula:** `Netto = Brutto / (1 + VAT%/100)`  
 ✅ **Storage:** Full precision in database  
 ✅ **Display:** Rounded to 2 decimals for EUR  
-✅ **Matches:** EasyCashTax workflow  
 
 This approach ensures accuracy and matches real-world invoicing practices!

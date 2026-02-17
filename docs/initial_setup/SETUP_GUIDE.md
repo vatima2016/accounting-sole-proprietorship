@@ -16,7 +16,7 @@ I've created a complete project starter with:
 
 ```bash
 # Navigate to your workspace
-cd /Users/impvti/tsworkspace/vatima2026
+cd ~/workspace
 
 # Download the accounting-project-starter.tar.gz from outputs
 
@@ -24,7 +24,7 @@ cd /Users/impvti/tsworkspace/vatima2026
 tar -xzf accounting-project-starter.tar.gz
 
 # You should now have:
-# /Users/impvti/tsworkspace/vatima2026/accounting-sole-proprietorship/
+# ~/workspace/accounting-sole-proprietorship/
 ```
 
 ### Step 2: Initialize Git Repository
@@ -222,7 +222,7 @@ Follow the detailed guides in the specification documents.
 
 1. **Import Historical Data**
    ```bash
-   # Import from your EasyCashTax export
+   # Import from your previous bookkeeping export
    ```
 
 2. **Google Drive Setup**
@@ -277,10 +277,10 @@ npm run build
 
 ```bash
 # macOS
-DB_PATH=/Users/impvti/Google Drive/Buchhaltung/buchhaltung.db
+DB_PATH=~/Google Drive/Buchhaltung/buchhaltung.db
 
 # Or if using Google Drive Desktop app
-DB_PATH=/Users/impvti/GoogleDrive/Buchhaltung/buchhaltung.db
+DB_PATH=~/GoogleDrive/Buchhaltung/buchhaltung.db
 
 # For testing (local only, no sync)
 DB_PATH=./database/buchhaltung.db
@@ -368,7 +368,7 @@ Your implementation is complete when:
 - [ ] Totals show correct Income/Expense/Profit/VAT
 - [ ] Can export quarterly VAT report as CSV
 - [ ] Database syncs to Google Drive
-- [ ] Can import data from EasyCashTax export
+- [ ] Can import data from CSV export
 
 ## Timeline Estimate
 

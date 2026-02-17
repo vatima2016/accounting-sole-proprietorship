@@ -31,8 +31,9 @@ Eine lokale Webanwendung für die Buchhaltung eines Einzelunternehmers mit deuts
 
 1. **Repository klonen:**
    ```bash
-   cd /Users/impvti/tsworkspace/vatima2026
-   # (Projekt ist bereits hier: accounting-sole-proprietorship)
+   cd ~/workspace
+   git clone <repository-url>
+   cd accounting-sole-proprietorship
    ```
 
 2. **Backend installieren:**
@@ -54,7 +55,7 @@ Eine lokale Webanwendung für die Buchhaltung eines Einzelunternehmers mit deuts
    cp .env.example .env
    
    # Datenbank-Pfad zu Google Drive anpassen:
-   # DB_PATH=/Users/impvti/GoogleDrive/Buchhaltung/buchhaltung.db
+   # DB_PATH=~/GoogleDrive/Buchhaltung/buchhaltung.db
    ```
 
 5. **Datenbank initialisieren:**

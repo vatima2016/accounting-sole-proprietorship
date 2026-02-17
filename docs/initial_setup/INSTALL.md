@@ -51,7 +51,7 @@ Follow the step-by-step guide in `bookkeeping-app-specification.md`
 ## Directory Structure to Create
 
 ```
-/Users/impvti/tsworkspace/vatima2026/accounting-sole-proprietorship/
+accounting-sole-proprietorship/
 ├── README.md
 ├── package.json
 ├── .gitignore

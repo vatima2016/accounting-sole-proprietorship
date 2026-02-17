@@ -106,7 +106,7 @@ module.exports = db;
 DB_PATH=./database/buchhaltung.db
 
 # Google Drive backup location
-GOOGLE_DRIVE_BACKUP_PATH=/Users/impvti/GoogleDrive/Buchhaltung/backups
+GOOGLE_DRIVE_BACKUP_PATH=~/GoogleDrive/Buchhaltung/backups
 ```
 
 ### 🔧 TO ADD: Input Validation
@@ -354,7 +354,7 @@ NODE_ENV=development
 DB_PATH=./database/buchhaltung.db
 
 # Google Drive Backup Path
-GOOGLE_DRIVE_BACKUP_PATH=/Users/impvti/GoogleDrive/Buchhaltung/backups
+GOOGLE_DRIVE_BACKUP_PATH=~/GoogleDrive/Buchhaltung/backups
 
 # CORS
 CORS_ORIGIN=http://localhost:5173
