@@ -3,8 +3,17 @@ import { api } from '../services/api';
 import TransactionList from '../components/transactions/TransactionList';
 import TransactionFormModal from '../components/transactions/TransactionFormModal';
 import TotalsDisplay from '../components/transactions/TotalsDisplay';
+import PeriodSelector from '../components/common/PeriodSelector';
+import { getPeriodDates } from '../utils/period';
 
 export default function Transactions() {
+  const now = new Date();
+  const [periodParams, setPeriodParams] = useState({
+    period: 'quarter',
+    year: now.getFullYear(),
+    month: now.getMonth() + 1,
+    quarter: Math.ceil((now.getMonth() + 1) / 3),
+  });
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -17,7 +26,8 @@ export default function Transactions() {
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await api.getTransactions({ page, limit: 50 });
+      const { start, end } = getPeriodDates(periodParams);
+      const result = await api.getTransactions({ page, limit: 50, start_date: start, end_date: end });
       let data = [...result.data];
       data.sort((a, b) => {
         let cmp = 0;
@@ -33,9 +43,15 @@ export default function Transactions() {
     } finally {
       setLoading(false);
     }
-  }, [page, sortKey, sortDir]);
+  }, [page, sortKey, sortDir, periodParams]);
 
   useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
+
+  // Reset to page 1 when period changes
+  const handlePeriodChange = (newParams) => {
+    setPeriodParams(newParams);
+    setPage(1);
+  };
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -66,15 +82,20 @@ export default function Transactions() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-800">Buchungen</h1>
-        <button
-          onClick={handleNew}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
-        >
-          + Neue Buchung
-        </button>
+        <div className="flex items-center gap-4">
+          <PeriodSelector {...periodParams} onChange={handlePeriodChange} />
+          <button
+            onClick={handleNew}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            + Neue Buchung
+          </button>
+        </div>
       </div>
 
-      <TotalsDisplay />
+      <div className="mb-6">
+        <TotalsDisplay periodParams={periodParams} />
+      </div>
 
       {loading ? (
         <div className="text-center py-12 text-gray-400">Laden...</div>

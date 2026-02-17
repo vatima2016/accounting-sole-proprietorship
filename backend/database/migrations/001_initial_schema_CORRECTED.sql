@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS description_category_usage (
     category_id INTEGER NOT NULL,
     usage_count INTEGER DEFAULT 1,
     last_used_at TEXT NOT NULL,
+    vat_rate INTEGER DEFAULT NULL,
+    last_amount_cents INTEGER DEFAULT NULL,
     FOREIGN KEY (category_id) REFERENCES categories(id),
     UNIQUE(description, category_id)
 );

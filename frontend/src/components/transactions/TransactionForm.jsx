@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCategories } from '../../hooks/useCategories';
 import { validateTransaction } from '../../utils/validation';
 import { api } from '../../services/api';
@@ -37,6 +37,7 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const grossInputRef = useRef(null);
 
   // Set last-used category for new transactions
   useEffect(() => {
@@ -55,17 +56,28 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
     setForm(f => ({ ...f, [field]: value }));
     if (errors[field]) setErrors(e => ({ ...e, [field]: undefined }));
 
-    // Reset category when type changes
+    // Reset category and description when type changes
     if (field === 'transaction_type') {
       const lastCat = getLastCategory(value);
-      setForm(f => ({ ...f, [field]: value, category_id: lastCat || '' }));
+      setForm(f => ({ ...f, [field]: value, category_id: lastCat || '', description: '' }));
     }
 
-    // Lock VAT rate for income categories
+    // Clear description, lock VAT rate, and auto-fill if only one description
     if (field === 'category_id') {
       const cat = categories.find(c => String(c.id) === String(value));
-      if (cat?.name in lockedVatRates) {
-        setForm(f => ({ ...f, [field]: value, vat_rate: lockedVatRates[cat.name] }));
+      const vatOverride = (cat?.name in lockedVatRates) ? { vat_rate: lockedVatRates[cat.name] } : {};
+      setForm(f => ({ ...f, [field]: value, description: '', ...vatOverride }));
+
+      if (value) {
+        api.getDescriptionSuggestions({ category_id: value }).then(suggestions => {
+          if (suggestions.length === 1) {
+            const s = suggestions[0];
+            const autoFill = { description: s.description };
+            if (s.vat_rate != null && !(cat?.name in lockedVatRates)) autoFill.vat_rate = s.vat_rate;
+            if (s.last_amount != null) autoFill.gross_amount = String(s.last_amount).replace('.', ',');
+            setForm(f => ({ ...f, ...autoFill }));
+          }
+        }).catch(() => {});
       }
     }
   };
@@ -85,7 +97,7 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
       };
       await onSave(data);
       saveLastCategory(form.transaction_type, form.category_id);
-      api.trackDescription({ description: form.description, category_id: data.category_id, vat_rate: data.vat_rate }).catch(() => {});
+      api.trackDescription({ description: form.description, category_id: data.category_id, vat_rate: data.vat_rate, gross_amount: data.gross_amount }).catch(() => {});
     } catch (err) {
       setErrors({ submit: err.message });
     } finally {
@@ -130,10 +142,17 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
         <label className="block text-sm font-medium text-gray-700 mb-1">Beschreibung *</label>
         <SmartDescriptionInput
           value={form.description}
-          onChange={(val, suggestedVatRate) => {
+          onChange={(val, suggestedVatRate, lastAmount) => {
             handleChange('description', val);
+            const updates = {};
             if (suggestedVatRate != null && !vatLocked) {
-              setForm(f => ({ ...f, vat_rate: suggestedVatRate }));
+              updates.vat_rate = suggestedVatRate;
+            }
+            if (lastAmount != null) {
+              updates.gross_amount = String(lastAmount).replace('.', ',');
+            }
+            if (Object.keys(updates).length > 0) {
+              setForm(f => ({ ...f, ...updates }));
             }
           }}
           categoryId={form.category_id}
@@ -145,17 +164,33 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Bruttobetrag (€) *</label>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={form.gross_amount}
-            onChange={(e) => {
-              const val = e.target.value.replace(/[^0-9.,]/g, '');
-              handleChange('gross_amount', val);
-            }}
-            placeholder="0,00"
-            className={inputClass('gross_amount')}
-          />
+          <div className="relative">
+            <input
+              ref={grossInputRef}
+              type="text"
+              inputMode="decimal"
+              value={form.gross_amount}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9.,]/g, '');
+                handleChange('gross_amount', val);
+              }}
+              placeholder="0,00"
+              className={`${inputClass('gross_amount')} pr-8`}
+            />
+            {form.gross_amount && (
+              <button
+                type="button"
+                onClick={() => { handleChange('gross_amount', ''); grossInputRef.current?.focus(); }}
+                title="Betrag löschen"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-red-400 hover:text-red-600"
+                tabIndex={-1}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+                </svg>
+              </button>
+            )}
+          </div>
           {errors.gross_amount && <p className="text-red-500 text-xs mt-1">{errors.gross_amount}</p>}
         </div>
         <div>

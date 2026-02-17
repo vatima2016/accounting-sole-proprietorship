@@ -1,16 +1,8 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { formatCurrency } from '../../utils/formatting';
-import PeriodSelector from '../common/PeriodSelector';
 
-export default function TotalsDisplay() {
-  const now = new Date();
-  const [periodParams, setPeriodParams] = useState({
-    period: 'quarter',
-    year: now.getFullYear(),
-    month: now.getMonth() + 1,
-    quarter: Math.ceil((now.getMonth() + 1) / 3),
-  });
+export default function TotalsDisplay({ periodParams }) {
   const [totals, setTotals] = useState(null);
 
   useEffect(() => {
@@ -27,19 +19,13 @@ export default function TotalsDisplay() {
   ];
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Übersicht</h2>
-        <PeriodSelector {...periodParams} onChange={setPeriodParams} />
-      </div>
-      <div className="grid grid-cols-4 gap-4">
-        {cards.map(c => (
-          <div key={c.label} className={`${c.bg} rounded-lg p-4`}>
-            <div className="text-xs text-gray-500 mb-1">{c.label}</div>
-            <div className={`text-lg font-bold ${c.color}`}>{formatCurrency(c.value)}</div>
-          </div>
-        ))}
-      </div>
+    <div className="grid grid-cols-4 gap-4">
+      {cards.map(c => (
+        <div key={c.label} className={`${c.bg} rounded-lg p-4`}>
+          <div className="text-xs text-gray-500 mb-1">{c.label}</div>
+          <div className={`text-lg font-bold ${c.color}`}>{formatCurrency(c.value)}</div>
+        </div>
+      ))}
     </div>
   );
 }
