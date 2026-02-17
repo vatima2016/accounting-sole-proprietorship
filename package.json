@@ -4,6 +4,7 @@
   "description": "Buchhaltung für Einzelunternehmer mit deutscher USt-Compliance",
   "private": true,
   "scripts": {
+    "prepare": "git config core.hooksPath git-hooks",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",

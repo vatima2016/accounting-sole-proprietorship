@@ -1,0 +1,51 @@
+#!/bin/sh
+# Pre-commit hook: scan staged files for secrets and sensitive data
+
+echo "Scanning for secrets..."
+
+# Get list of staged files (excluding deleted)
+STAGED=$(git diff --cached --name-only --diff-filter=d)
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+ISSUES=""
+
+# 1. Block .env files (except .env.example)
+ENV_FILES=$(echo "$STAGED" | grep -E '\.env$|\.env\.local$|\.env\.production$|\.env\.development$' || true)
+if [ -n "$ENV_FILES" ]; then
+  ISSUES="$ISSUES\n  .env file(s): $ENV_FILES"
+fi
+
+# 2. Block database files
+DB_FILES=$(echo "$STAGED" | grep -E '\.(db|db-wal|db-shm|sqlite|sqlite3)$' || true)
+if [ -n "$DB_FILES" ]; then
+  ISSUES="$ISSUES\n  Database file(s): $DB_FILES"
+fi
+
+# 3. Block private keys and certificates
+KEY_FILES=$(echo "$STAGED" | grep -E '\.(pem|key|p12|pfx|jks|keystore)$' || true)
+if [ -n "$KEY_FILES" ]; then
+  ISSUES="$ISSUES\n  Key/cert file(s): $KEY_FILES"
+fi
+
+# 4. Scan staged content for secrets patterns
+SECRETS_PATTERN='(PRIVATE KEY|password\s*=\s*["\x27].+["\x27]|api[_-]?key\s*=\s*["\x27].+["\x27]|secret\s*=\s*["\x27].+["\x27]|token\s*=\s*["\x27][A-Za-z0-9+/=_-]{20,}["\x27]|AWS_SECRET|ANTHROPIC_API_KEY|OPENAI_API_KEY|sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-9]{36})'
+
+MATCHES=$(git diff --cached -U0 -- . ':!git-hooks/' | grep -iE "$SECRETS_PATTERN" | grep '^+' | grep -v '^+++' || true)
+if [ -n "$MATCHES" ]; then
+  ISSUES="$ISSUES\n  Possible secrets in code:\n$MATCHES"
+fi
+
+if [ -n "$ISSUES" ]; then
+  echo ""
+  echo "BLOCKED: Potential secrets or sensitive data detected:"
+  printf "$ISSUES\n"
+  echo ""
+  echo "If this is a false positive, commit with: git commit --no-verify"
+  exit 1
+fi
+
+echo "No secrets found. Proceeding with commit."
+exit 0
