@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { formatCurrency } from '../../utils/formatting';
 
-export default function TotalsDisplay({ periodParams }) {
+export default function TotalsDisplay({ periodParams, refreshKey }) {
   const [totals, setTotals] = useState(null);
 
   useEffect(() => {
     api.getTotals(periodParams).then(setTotals).catch(console.error);
-  }, [periodParams]);
+  }, [periodParams, refreshKey]);
 
   if (!totals) return null;
 

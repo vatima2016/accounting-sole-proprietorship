@@ -22,6 +22,7 @@ export default function Transactions() {
   const [sortDir, setSortDir] = useState('desc');
   const [editTransaction, setEditTransaction] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [totalsKey, setTotalsKey] = useState(0);
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -76,6 +77,7 @@ export default function Transactions() {
     setShowForm(false);
     setEditTransaction(null);
     fetchTransactions();
+    setTotalsKey(k => k + 1);
   };
 
   return (
@@ -94,7 +96,7 @@ export default function Transactions() {
       </div>
 
       <div className="mb-6">
-        <TotalsDisplay periodParams={periodParams} />
+        <TotalsDisplay periodParams={periodParams} refreshKey={totalsKey} />
       </div>
 
       {loading ? (
