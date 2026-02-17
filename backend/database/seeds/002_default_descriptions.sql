@@ -5,7 +5,7 @@ INSERT OR IGNORE INTO description_history (description, usage_count, last_used_a
 -- High frequency
 ('Büromaterial', 29, datetime('now'), datetime('now')),
 ('Kaffee', 16, datetime('now'), datetime('now')),
-('Kultura SW Paket', 12, datetime('now'), datetime('now')),
+('Reisebüro Softwarepaket', 12, datetime('now'), datetime('now')),
 ('Netcologne', 12, datetime('now'), datetime('now')),
 ('Freenet', 12, datetime('now'), datetime('now')),
 ('URV', 10, datetime('now'), datetime('now')),
@@ -22,7 +22,6 @@ INSERT OR IGNORE INTO description_history (description, usage_count, last_used_a
 ('Wireless Kopfhörer', 1, datetime('now'), datetime('now')),
 ('Kaffeefilter', 1, datetime('now'), datetime('now')),
 ('Ersatzteile', 1, datetime('now'), datetime('now')),
-('Intertour Europa GmbH', 1, datetime('now'), datetime('now')),
 ('Seife', 1, datetime('now'), datetime('now')),
 ('MS Office 365', 1, datetime('now'), datetime('now')),
 ('Wasserkocher', 1, datetime('now'), datetime('now')),
@@ -88,7 +87,7 @@ INSERT OR IGNORE INTO description_category_usage (description, category_id, usag
 ('Tee', 4, 8, datetime('now'), 7),
 ('Getränke', 4, 12, datetime('now'), 19),
 -- Franchise/Lizenzkosten 19%
-('Kultura SW Paket', 5, 12, datetime('now'), 19),
+('Reisebüro Softwarepaket', 5, 12, datetime('now'), 19),
 ('MS Office 365', 5, 1, datetime('now'), 19),
 ('Kaspersky Total Security', 5, 1, datetime('now'), 19),
 ('Kaspersky VPN', 5, 1, datetime('now'), 19),
@@ -108,7 +107,5 @@ INSERT OR IGNORE INTO description_category_usage (description, category_id, usag
 ('Freenet', 10, 12, datetime('now'), 19),
 ('Strato Power Web Basic', 10, 1, datetime('now'), 19),
 ('Strato Hosting Basic', 10, 2, datetime('now'), 19),
--- Verkaufsprovisionen 19%
-('Intertour Europa GmbH', 11, 1, datetime('now'), 19),
 -- Werbekosten 19%
 ('Steuerberater: Gewinnermittlung und USt-Erklärung', 12, 2, datetime('now'), 19);
