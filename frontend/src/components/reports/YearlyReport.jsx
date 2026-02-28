@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { formatCurrency } from '../../utils/formatting';
 
-export default function YearlyReport() {
-  const [year, setYear] = useState(new Date().getFullYear());
+export default function YearlyReport({ year: propYear, onYearChange }) {
+  const year = propYear || new Date().getFullYear();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -15,7 +15,9 @@ export default function YearlyReport() {
       .finally(() => setLoading(false));
   }, [year]);
 
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  const setYear = (y) => onYearChange?.(y);
+  const now = new Date();
+  const years = Array.from({ length: now.getFullYear() - 2017 }, (_, i) => now.getFullYear() - i);
 
   const Section = ({ title, items, color }) => (
     <div className="mb-6">

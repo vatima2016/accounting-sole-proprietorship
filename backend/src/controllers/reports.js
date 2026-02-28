@@ -1,4 +1,4 @@
-const { generateVATReport, generateYearlyReport } = require('../services/reportGenerator');
+const { generateVATReport, generateYearlyReport, generateYearlySummaries } = require('../services/reportGenerator');
 const { exportElsterCSV } = require('../services/elsterExporter');
 const { exportTransactionsCSV } = require('../services/csvExporter');
 
@@ -47,4 +47,15 @@ function elsterExport(req, res) {
   }
 }
 
-module.exports = { vatReport, yearlyReport, exportCSV, elsterExport };
+function yearlySummaries(req, res) {
+  try {
+    const startYear = Number(req.query.from) || 2018;
+    const data = generateYearlySummaries(startYear);
+    res.json(data);
+  } catch (err) {
+    console.error('Yearly summaries error:', err);
+    res.status(500).json({ error: 'Failed to generate yearly summaries' });
+  }
+}
+
+module.exports = { vatReport, yearlyReport, yearlySummaries, exportCSV, elsterExport };

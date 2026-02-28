@@ -17,6 +17,7 @@ export default function TransactionRow({ transaction, onClick }) {
       <td className="px-4 py-2.5 text-sm text-right text-gray-600">{transaction.vat_rate}%</td>
       <td className="px-4 py-2.5 text-sm text-right text-gray-600">{formatCurrency(transaction.net_amount)}</td>
       <td className="px-4 py-2.5 text-sm text-right text-gray-600">{formatCurrency(transaction.vat_amount)}</td>
+      <td className="px-4 py-2.5 text-sm text-gray-500">{transaction.invoice_number || ''}</td>
     </tr>
   );
 }

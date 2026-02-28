@@ -13,9 +13,9 @@ function exportElsterCSV(year, quarter) {
 
   const header = ['Kennzahl', 'Bezeichnung', 'Betrag'].join(';');
   const rows = [
-    ['81', 'Steuerpfl. Umsätze 19% (Bemessungsgrundlage)', formatGermanDecimal(kz.kz81_net)],
+    ['81', 'Steuerpfl. Umsätze 19% (Bemessungsgrundlage)', String(kz.kz81_net).replace('.', ',')],
     ['81_vat', 'USt auf Kz 81', formatGermanDecimal(kz.kz81_vat)],
-    ['86', 'Steuerpfl. Umsätze 7% (Bemessungsgrundlage)', formatGermanDecimal(kz.kz86_net)],
+    ['86', 'Steuerpfl. Umsätze 7% (Bemessungsgrundlage)', String(kz.kz86_net).replace('.', ',')],
     ['86_vat', 'USt auf Kz 86', formatGermanDecimal(kz.kz86_vat)],
     ['41', 'Steuerfreie Umsätze', formatGermanDecimal(kz.kz41_net)],
     ['66', 'Vorsteuerbeträge', formatGermanDecimal(kz.kz66_vat)],

@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     
     -- Store as INTEGER cents (e.g., 2544 = €25.44)
     gross_amount_cents INTEGER NOT NULL,
-    vat_rate INTEGER NOT NULL CHECK(vat_rate IN (0, 7, 19)),
+    vat_rate INTEGER NOT NULL CHECK(vat_rate IN (0, 5, 7, 16, 19)),
     net_amount_cents INTEGER NOT NULL,
     vat_amount_cents INTEGER NOT NULL,
     

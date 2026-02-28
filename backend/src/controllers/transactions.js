@@ -25,9 +25,21 @@ const BASE_QUERY = `
   LEFT JOIN categories c ON t.category_id = c.id
 `;
 
+const SORT_COLUMNS = {
+  date: 't.date',
+  description: 't.description',
+  category_name: 'c.name',
+  transaction_type: 't.transaction_type',
+  gross_amount: 't.gross_amount_cents',
+  net_amount: 't.net_amount_cents',
+  vat_amount: 't.vat_amount_cents',
+  vat_rate: 't.vat_rate',
+  invoice_number: 't.invoice_number',
+};
+
 function list(req, res) {
   const db = getDatabase();
-  const { start_date, end_date, type, category_id, page = 1, limit = 50 } = req.query;
+  const { start_date, end_date, type, category_id, page = 1, limit = 50, sort, dir } = req.query;
 
   let where = [];
   let params = [];
@@ -40,8 +52,12 @@ function list(req, res) {
   const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
   const offset = (Number(page) - 1) * Number(limit);
 
+  const sortCol = SORT_COLUMNS[sort] || 't.date';
+  const sortDir = dir === 'asc' ? 'ASC' : 'DESC';
+  const orderBy = `ORDER BY ${sortCol} ${sortDir}, t.id DESC`;
+
   const countRow = db.prepare(`SELECT COUNT(*) as total FROM transactions t ${whereClause}`).get(...params);
-  const rows = db.prepare(`${BASE_QUERY} ${whereClause} ORDER BY t.date DESC, t.id DESC LIMIT ? OFFSET ?`).all(...params, Number(limit), offset);
+  const rows = db.prepare(`${BASE_QUERY} ${whereClause} ${orderBy} LIMIT ? OFFSET ?`).all(...params, Number(limit), offset);
 
   res.json({
     data: rows.map(toApiFormat),

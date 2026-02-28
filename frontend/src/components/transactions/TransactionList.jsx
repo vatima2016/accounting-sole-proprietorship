@@ -8,6 +8,7 @@ const columns = [
   { label: 'USt%', key: 'vat_rate', align: 'right' },
   { label: 'Netto', key: 'net_amount', align: 'right' },
   { label: 'USt', key: 'vat_amount', align: 'right' },
+  { label: 'Beleg-Nr.', key: 'invoice_number' },
 ];
 
 export default function TransactionList({ transactions, onRowClick, sortKey, sortDir, onSort }) {

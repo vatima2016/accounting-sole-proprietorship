@@ -48,6 +48,7 @@ export const api = {
   // Reports
   getVATReport: (year, quarter) => request(`/reports/vat/${year}/${quarter}`),
   getYearlyReport: (year) => request(`/reports/yearly/${year}`),
+  getYearlySummaries: (from = 2018) => request(`/reports/yearly-summaries?from=${from}`),
   exportCSV: (params) => {
     const query = new URLSearchParams(params);
     return `${BASE_URL}/reports/export/csv?${query}`;
@@ -58,6 +59,19 @@ export const api = {
   validateImport: (formData) => fetch(`${BASE_URL}/import/validate`, { method: 'POST', body: formData }).then(r => r.json()),
   importCSV: (formData) => fetch(`${BASE_URL}/import/csv`, { method: 'POST', body: formData }).then(r => r.json()),
 
+  // EasyCash&Tax Import
+  validateEasyCashTax: (data) => request('/import/easyct/validate', { method: 'POST', body: JSON.stringify(data) }),
+  importEasyCashTax: (data) => request('/import/easyct/import', { method: 'POST', body: JSON.stringify(data) }),
+
   // Backup
-  createBackup: () => request('/backup', { method: 'POST' }),
+  backupDownloadUrl: (year) => `${BASE_URL}/backup/download?year=${year || 'all'}`,
+  getBackupPath: () => request('/settings/backup-path'),
+  setBackupPath: (path) => request('/settings/backup-path', { method: 'PUT', body: JSON.stringify({ path }) }),
+  getBackupFiles: () => request('/backup/files'),
+  exportCategories: () => request('/backup/categories-export', { method: 'POST' }),
+  categoriesDownloadUrl: () => `${BASE_URL}/backup/categories-download`,
+  exportBackup: (year) => request('/backup/export', { method: 'POST', body: JSON.stringify({ year: year || 'all' }) }),
+  dbCopy: () => request('/backup/db-copy', { method: 'POST' }),
+  importBackup: (filename) => request('/backup/import', { method: 'POST', body: JSON.stringify({ filename }) }),
+  uploadBackup: (data) => request('/backup/upload', { method: 'POST', body: JSON.stringify(data) }),
 };

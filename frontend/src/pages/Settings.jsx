@@ -184,27 +184,129 @@ function NewCategoryForm({ type, onCreated }) {
 
 export default function Settings() {
   const [allCategories, setAllCategories] = useState([]);
+  const [backupYear, setBackupYear] = useState(String(new Date().getFullYear()));
   const [backupStatus, setBackupStatus] = useState(null);
   const [backing, setBacking] = useState(false);
+  const [backupFiles, setBackupFiles] = useState([]);
+  const [selectedFile, setSelectedFile] = useState('');
+  const [importStatus, setImportStatus] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [backupPath, setBackupPath] = useState('');
+  const [editingPath, setEditingPath] = useState(false);
+  const [pathDraft, setPathDraft] = useState('');
+  const [pathSaving, setPathSaving] = useState(false);
+  const [dbCopying, setDbCopying] = useState(false);
+  const [dbCopyStatus, setDbCopyStatus] = useState(null);
+  const [catExporting, setCatExporting] = useState(false);
+  const [catExportStatus, setCatExportStatus] = useState(null);
+
+  const now = new Date();
+  const backupYears = ['all', ...Array.from({ length: now.getFullYear() - 2017 }, (_, i) => String(now.getFullYear() - i))];
 
   const fetchAllCategories = () => {
     api.getAllCategories().then(setAllCategories).catch(console.error);
   };
 
+  const fetchBackupFiles = () => {
+    api.getBackupFiles().then(r => {
+      setBackupFiles(r.files || []);
+      setBackupPath(r.path || '');
+    }).catch(console.error);
+  };
+
   useEffect(() => {
     fetchAllCategories();
+    api.getBackupPath().then(r => {
+      setBackupPath(r.path || '');
+      setPathDraft(r.path || '');
+    }).catch(console.error);
+    fetchBackupFiles();
   }, []);
 
-  const handleBackup = async () => {
+  const handleExportBackup = async () => {
     setBacking(true);
     setBackupStatus(null);
     try {
-      const result = await api.createBackup();
-      setBackupStatus({ success: true, path: result.path });
+      const result = await api.exportBackup(backupYear);
+      setBackupStatus({ success: true, path: result.path, count: result.transactions });
+      fetchBackupFiles();
     } catch (err) {
       setBackupStatus({ success: false, error: err.message });
     } finally {
       setBacking(false);
+    }
+  };
+
+  const handleExportCategories = async () => {
+    setCatExporting(true);
+    setCatExportStatus(null);
+    try {
+      const result = await api.exportCategories();
+      setCatExportStatus({ success: true, path: result.path, count: result.count });
+    } catch (err) {
+      setCatExportStatus({ success: false, error: err.message });
+    } finally {
+      setCatExporting(false);
+    }
+  };
+
+  const handleDbCopy = async () => {
+    setDbCopying(true);
+    setDbCopyStatus(null);
+    try {
+      const result = await api.dbCopy();
+      setDbCopyStatus({ success: true, path: result.path });
+    } catch (err) {
+      setDbCopyStatus({ success: false, error: err.message });
+    } finally {
+      setDbCopying(false);
+    }
+  };
+
+  const handleImportBackup = async () => {
+    if (!selectedFile) return;
+    setImporting(true);
+    setImportStatus(null);
+    try {
+      const result = await api.importBackup(selectedFile);
+      setImportStatus({ success: true, ...result });
+    } catch (err) {
+      setImportStatus({ success: false, error: err.message });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleUploadBackup = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImporting(true);
+    setImportStatus(null);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const result = await api.uploadBackup(data);
+      setImportStatus({ success: true, ...result });
+    } catch (err) {
+      setImportStatus({ success: false, error: err.message });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleSavePath = async () => {
+    if (!pathDraft.trim()) return;
+    setPathSaving(true);
+    try {
+      await api.setBackupPath(pathDraft.trim());
+      setBackupPath(pathDraft.trim());
+      setEditingPath(false);
+      fetchBackupFiles();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setPathSaving(false);
     }
   };
 
@@ -241,26 +343,164 @@ export default function Settings() {
       {/* Backup */}
       <section className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-3">Datenbank-Backup</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Erstellt eine Sicherung der Datenbank im Google Drive Backup-Ordner.
-        </p>
-        <button
-          onClick={handleBackup}
-          disabled={backing}
-          className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50"
-        >
-          {backing ? 'Backup läuft...' : 'Backup erstellen'}
-        </button>
+
+        {/* Backup path */}
+        <div className="mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Backup-Ordner:</span>
+            {editingPath ? (
+              <>
+                <input
+                  value={pathDraft}
+                  onChange={(e) => setPathDraft(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSavePath(); if (e.key === 'Escape') { setEditingPath(false); setPathDraft(backupPath); } }}
+                  className="border rounded px-2 py-1 text-sm flex-1"
+                  autoFocus
+                />
+                <button onClick={handleSavePath} disabled={pathSaving} className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 disabled:opacity-50">
+                  {pathSaving ? '...' : 'Speichern'}
+                </button>
+                <button onClick={() => { setEditingPath(false); setPathDraft(backupPath); }} className="text-xs text-gray-500 hover:text-gray-700 px-1">
+                  Abbrechen
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="text-sm text-gray-800 font-mono">{backupPath || '(nicht konfiguriert)'}</span>
+                <button onClick={() => { setPathDraft(backupPath); setEditingPath(true); }} className="text-xs text-blue-600 hover:text-blue-800 px-1" title="Lokalen Ordnerpfad ändern, in dem Backups gespeichert und gelesen werden (z.B. Google Drive Sync-Ordner)">
+                  Ändern
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Export */}
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-sm text-gray-600">Backup speichern:</span>
+          <select
+            value={backupYear}
+            onChange={(e) => setBackupYear(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          >
+            {backupYears.map(y => (
+              <option key={y} value={y}>{y === 'all' ? 'Alle Jahre' : y}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleExportBackup}
+            disabled={backing}
+            className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50"
+            title="Backup als JSON-Datei im konfigurierten Backup-Ordner speichern (z.B. Google Drive)"
+          >
+            {backing ? 'Speichert...' : 'Backup erstellen'}
+          </button>
+          <a
+            href={api.backupDownloadUrl(backupYear)}
+            className="border border-gray-300 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50"
+            title="Backup als JSON-Datei direkt im Browser herunterladen (ohne Backup-Ordner)"
+          >
+            Herunterladen
+          </a>
+        </div>
         {backupStatus && (
-          <div className={`mt-3 text-sm ${backupStatus.success ? 'text-green-700' : 'text-red-600'}`}>
-            {backupStatus.success ? `Backup erstellt: ${backupStatus.path}` : `Fehler: ${backupStatus.error}`}
+          <div className={`mb-4 text-sm ${backupStatus.success ? 'text-green-700' : 'text-red-600'}`}>
+            {backupStatus.success
+              ? `Backup gespeichert: ${backupStatus.path} (${backupStatus.count} Buchungen)`
+              : `Fehler: ${backupStatus.error}`}
           </div>
         )}
+
+        {/* DB Copy */}
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-sm text-gray-600">Datenbank-Kopie:</span>
+          <button
+            onClick={handleDbCopy}
+            disabled={dbCopying}
+            className="border border-gray-300 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+            title="Vollständige SQLite-Datenbankdatei in den Backup-Ordner kopieren (1:1 Kopie der .db-Datei)"
+          >
+            {dbCopying ? 'Kopiert...' : 'DB-Datei kopieren'}
+          </button>
+        </div>
+        {dbCopyStatus && (
+          <div className={`mb-4 text-sm ${dbCopyStatus.success ? 'text-green-700' : 'text-red-600'}`}>
+            {dbCopyStatus.success
+              ? `Datenbank-Kopie gespeichert: ${dbCopyStatus.path}`
+              : `Fehler: ${dbCopyStatus.error}`}
+          </div>
+        )}
+
+        {/* Import */}
+        <div className="border-t pt-4">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-600">Backup importieren:</span>
+            <select
+              value={selectedFile}
+              onChange={(e) => setSelectedFile(e.target.value)}
+              className="border rounded px-2 py-1 text-sm flex-1 max-w-md"
+            >
+              <option value="">-- Datei wählen --</option>
+              {backupFiles.map(f => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+            <button
+              onClick={handleImportBackup}
+              disabled={importing || !selectedFile}
+              className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+              title="Ausgewählte Backup-Datei aus dem Backup-Ordner importieren. Bereits vorhandene Buchungen werden übersprungen."
+            >
+              {importing ? 'Importiert...' : 'Importieren'}
+            </button>
+            <span className="text-xs text-gray-400">oder</span>
+            <label className="border border-gray-300 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50 cursor-pointer" title="JSON-Backup-Datei vom Computer hochladen und importieren (ohne konfigurierten Backup-Ordner)">
+              Datei hochladen
+              <input type="file" accept=".json" onChange={handleUploadBackup} className="hidden" disabled={importing} />
+            </label>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Bereits vorhandene Buchungen werden übersprungen. Datei hochladen funktioniert auch ohne konfigurierten Backup-Ordner.
+          </p>
+          {importStatus && (
+            <div className={`mt-3 text-sm ${importStatus.success ? 'text-green-700' : 'text-red-600'}`}>
+              {importStatus.success
+                ? `Import abgeschlossen: ${importStatus.imported} importiert, ${importStatus.skipped} übersprungen (von ${importStatus.total} gesamt)`
+                : `Fehler: ${importStatus.error}`}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Categories */}
       <section className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-3">Kategorien</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold">Kategorien</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportCategories}
+              disabled={catExporting}
+              className="border border-gray-300 text-gray-600 px-3 py-1.5 rounded text-xs hover:bg-gray-50 disabled:opacity-50"
+              title="Alle Kategorien als JSON-Datei im Backup-Ordner speichern"
+            >
+              {catExporting ? 'Exportiert...' : 'Exportieren'}
+            </button>
+            <a
+              href={api.categoriesDownloadUrl()}
+              className="border border-gray-300 text-gray-600 px-3 py-1.5 rounded text-xs hover:bg-gray-50"
+              title="Alle Kategorien als JSON-Datei im Browser herunterladen"
+            >
+              Herunterladen
+            </a>
+          </div>
+        </div>
+        {catExportStatus && (
+          <div className={`mb-3 text-sm ${catExportStatus.success ? 'text-green-700' : 'text-red-600'}`}>
+            {catExportStatus.success
+              ? `Kategorien exportiert: ${catExportStatus.path} (${catExportStatus.count} Kategorien)`
+              : `Fehler: ${catExportStatus.error}`}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-6">
           <div>
             <h3 className="text-sm font-medium text-green-700 mb-2">Einnahmen</h3>

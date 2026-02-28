@@ -53,7 +53,7 @@ INSERT OR IGNORE INTO description_history (description, usage_count, last_used_a
 -- 1=Provisionen, 2=Provisionen USt frei
 -- 3=Betriebsbedarf, 4=Bewirtungskosten Büro, 5=Franchise/Lizenzkosten
 -- 6=GWG, 7=Kfz-Kosten, 8=Kosten der Warenabgabe
--- 9=Raumkosten, 10=Telefon Internet Porto, 11=Verkaufsprovisionen, 12=Werbekosten
+-- 9=Raumkosten, 10=Telefon, Internet, Porto, 11=Verkaufsprovisionen, 12=Werbekosten
 
 INSERT OR IGNORE INTO description_category_usage (description, category_id, usage_count, last_used_at, vat_rate) VALUES
 -- Income: Provisionen 19%
@@ -102,7 +102,7 @@ INSERT OR IGNORE INTO description_category_usage (description, category_id, usag
 -- Raumkosten 0%
 ('Miete betrieblicher Anteil', 9, 1, datetime('now'), 0),
 ('Strom betrieblicher Anteil', 9, 1, datetime('now'), 0),
--- Telefon Internet Porto 19%
+-- Telefon, Internet, Porto 19%
 ('Netcologne', 10, 12, datetime('now'), 19),
 ('Freenet', 10, 12, datetime('now'), 19),
 ('Strato Power Web Basic', 10, 1, datetime('now'), 19),

@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { formatCurrency } from '../../utils/formatting';
 
-export default function VATReport() {
+export default function VATReport({ year: propYear, quarter: propQuarter, onParamsChange }) {
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [quarter, setQuarter] = useState(Math.ceil((now.getMonth() + 1) / 3));
+  const year = propYear || now.getFullYear();
+  const quarter = propQuarter || Math.ceil((now.getMonth() + 1) / 3);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -17,12 +17,15 @@ export default function VATReport() {
       .finally(() => setLoading(false));
   }, [year, quarter]);
 
-  const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
+  const setYear = (y) => onParamsChange?.({ year: y });
+  const setQuarter = (q) => onParamsChange?.({ quarter: q });
+
+  const years = Array.from({ length: now.getFullYear() - 2017 }, (_, i) => now.getFullYear() - i);
 
   const kzRows = report ? [
-    { kz: '81', label: 'Steuerpfl. Umsätze 19% (Bemessungsgrundlage)', value: report.kennzahlen.kz81_net },
+    { kz: '81', label: 'Steuerpfl. Umsätze 19% (Bemessungsgrundlage)', value: report.kennzahlen.kz81_net, exact: report.kennzahlen.kz81_net_exact },
     { kz: '', label: 'USt auf Kz 81', value: report.kennzahlen.kz81_vat },
-    { kz: '86', label: 'Steuerpfl. Umsätze 7% (Bemessungsgrundlage)', value: report.kennzahlen.kz86_net },
+    { kz: '86', label: 'Steuerpfl. Umsätze 7% (Bemessungsgrundlage)', value: report.kennzahlen.kz86_net, exact: report.kennzahlen.kz86_net_exact },
     { kz: '', label: 'USt auf Kz 86', value: report.kennzahlen.kz86_vat },
     { kz: '41', label: 'Steuerfreie Umsätze', value: report.kennzahlen.kz41_net },
     { kz: '66', label: 'Vorsteuerbeträge', value: report.kennzahlen.kz66_vat },
@@ -57,6 +60,7 @@ export default function VATReport() {
                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 w-16">Kz</th>
                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500">Bezeichnung</th>
                 <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500">Betrag</th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500">(berechnet)</th>
               </tr>
             </thead>
             <tbody>
@@ -65,6 +69,7 @@ export default function VATReport() {
                   <td className="px-4 py-2 text-sm text-gray-400">{row.kz}</td>
                   <td className="px-4 py-2 text-sm">{row.label}</td>
                   <td className="px-4 py-2 text-sm text-right">{formatCurrency(row.value)}</td>
+                  <td className="px-4 py-2 text-sm text-right text-gray-400">{row.exact != null ? `(${formatCurrency(row.exact)})` : ''}</td>
                 </tr>
               ))}
             </tbody>

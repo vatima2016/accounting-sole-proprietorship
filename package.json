@@ -10,7 +10,8 @@
     "dev:frontend": "cd frontend && npm run dev",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start"
+    "start": "npm run dev",
+    "start:backend": "cd backend && npm start"
   },
   "keywords": ["accounting", "bookkeeping", "vat", "germany", "einzelunternehmer"],
   "author": "",

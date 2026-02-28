@@ -2,7 +2,7 @@ import { getMonthName } from '../../utils/formatting';
 
 export default function PeriodSelector({ period, year, month, quarter, onChange }) {
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const years = Array.from({ length: currentYear - 2018 + 1 }, (_, i) => currentYear - i);
 
   return (
     <div className="flex items-center gap-2 text-sm">

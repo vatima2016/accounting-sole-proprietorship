@@ -14,6 +14,6 @@ INSERT OR IGNORE INTO categories (name, type, description, sort_order) VALUES
 ('Kfz-Kosten (betriebl. Anteil)', 'expense', 'Betriebliche Kfz-Kosten', 14),
 ('Kosten der Warenabgabe', 'expense', 'Versand und Warenabgabe', 15),
 ('Raumkosten', 'expense', 'Miete, Nebenkosten, Büro', 16),
-('Telefon Internet Porto', 'expense', 'Kommunikationskosten', 17),
+('Telefon, Internet, Porto', 'expense', 'Kommunikationskosten', 17),
 ('Verkaufsprovisionen', 'expense', 'Provisionen an Dritte', 18),
 ('Werbekosten', 'expense', 'Werbung und Marketing', 19);

@@ -38,11 +38,13 @@ function generateVATReport(year, quarter) {
   };
 
   for (const row of incomeRows) {
-    if (row.vat_rate === 19) {
-      kz.kz81_net = centsToEuros(row.total_net_cents);
+    if (row.vat_rate === 19 || row.vat_rate === 16) {
+      kz.kz81_net = Math.floor(centsToEuros(row.total_net_cents));
+      kz.kz81_net_exact = centsToEuros(row.total_net_cents);
       kz.kz81_vat = centsToEuros(row.total_vat_cents);
-    } else if (row.vat_rate === 7) {
-      kz.kz86_net = centsToEuros(row.total_net_cents);
+    } else if (row.vat_rate === 7 || row.vat_rate === 5) {
+      kz.kz86_net = Math.floor(centsToEuros(row.total_net_cents));
+      kz.kz86_net_exact = centsToEuros(row.total_net_cents);
       kz.kz86_vat = centsToEuros(row.total_vat_cents);
     } else if (row.vat_rate === 0) {
       kz.kz41_net = centsToEuros(row.total_net_cents);
@@ -111,4 +113,42 @@ function generateYearlyReport(year) {
   };
 }
 
-module.exports = { generateVATReport, generateYearlyReport };
+function generateYearlySummaries(startYear) {
+  const db = getDatabase();
+  const currentYear = new Date().getFullYear();
+
+  const rows = db.prepare(`
+    SELECT
+      CAST(substr(date, 1, 4) AS INTEGER) as year,
+      transaction_type,
+      SUM(gross_amount_cents) as total_cents,
+      COUNT(*) as count
+    FROM transactions
+    WHERE date >= ?
+    GROUP BY year, transaction_type
+    ORDER BY year
+  `).all(`${startYear}-01-01`);
+
+  const byYear = {};
+  for (const row of rows) {
+    if (!byYear[row.year]) byYear[row.year] = { income: 0, expenses: 0, count: 0 };
+    if (row.transaction_type === 'income') byYear[row.year].income = row.total_cents;
+    else byYear[row.year].expenses = row.total_cents;
+    byYear[row.year].count += row.count;
+  }
+
+  const result = [];
+  for (let y = startYear; y <= currentYear; y++) {
+    const d = byYear[y] || { income: 0, expenses: 0, count: 0 };
+    result.push({
+      year: y,
+      income: centsToEuros(d.income),
+      expenses: centsToEuros(d.expenses),
+      profit: centsToEuros(d.income - d.expenses),
+      count: d.count,
+    });
+  }
+  return result;
+}
+
+module.exports = { generateVATReport, generateYearlyReport, generateYearlySummaries };
