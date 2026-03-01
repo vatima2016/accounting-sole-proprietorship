@@ -1,0 +1,1 @@
+ALTER TABLE categories ADD COLUMN datev_account TEXT DEFAULT NULL;

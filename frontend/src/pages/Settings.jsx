@@ -200,6 +200,16 @@ export default function Settings() {
   const [catExporting, setCatExporting] = useState(false);
   const [catExportStatus, setCatExportStatus] = useState(null);
 
+  // DATEV state
+  const [datevBeraternr, setDatevBeraternr] = useState('');
+  const [datevMandantnr, setDatevMandantnr] = useState('');
+  const [datevSaving, setDatevSaving] = useState(false);
+  const [datevSaved, setDatevSaved] = useState(false);
+  const [datevYear, setDatevYear] = useState(() => sessionStorage.getItem('datevYear') || String(new Date().getFullYear()));
+  const [datevPreview, setDatevPreview] = useState(null);
+  const [datevLoading, setDatevLoading] = useState(false);
+  const [sachkontenSaving, setSachkontenSaving] = useState({});
+
   const now = new Date();
   const backupYears = ['all', ...Array.from({ length: now.getFullYear() - 2017 }, (_, i) => String(now.getFullYear() - i))];
 
@@ -221,13 +231,27 @@ export default function Settings() {
       setPathDraft(r.path || '');
     }).catch(console.error);
     fetchBackupFiles();
+    api.getDatevSettings().then(r => {
+      setDatevBeraternr(r.beraternr || '');
+      setDatevMandantnr(r.mandantnr || '');
+    }).catch(console.error);
   }, []);
 
-  const handleExportBackup = async () => {
+  const handleExportBackup = async (force = false) => {
     setBacking(true);
     setBackupStatus(null);
     try {
-      const result = await api.exportBackup(backupYear);
+      const result = await api.exportBackup(backupYear, force);
+      if (result.duplicate) {
+        const save = window.confirm(
+          `${result.message}\n\nTrotzdem ein zusätzliches Backup speichern?`
+        );
+        if (save) {
+          return handleExportBackup(true);
+        }
+        setBackupStatus({ success: true, path: null, count: null, skipped: true });
+        return;
+      }
       setBackupStatus({ success: true, path: result.path, count: result.transactions });
       fetchBackupFiles();
     } catch (err) {
@@ -331,10 +355,49 @@ export default function Settings() {
     fetchAllCategories();
   };
 
+  const handleSaveDatevSettings = async () => {
+    setDatevSaving(true);
+    setDatevSaved(false);
+    try {
+      await api.saveDatevSettings({ beraternr: datevBeraternr, mandantnr: datevMandantnr });
+      setDatevSaved(true);
+      setTimeout(() => setDatevSaved(false), 3000);
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setDatevSaving(false);
+    }
+  };
+
+  const handleSachkontoBlur = async (categoryId, value) => {
+    setSachkontenSaving(prev => ({ ...prev, [categoryId]: true }));
+    try {
+      await api.updateCategory(categoryId, { datev_account: value.trim() || null });
+      fetchAllCategories();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setSachkontenSaving(prev => ({ ...prev, [categoryId]: false }));
+    }
+  };
+
+  const handleDatevPreview = async () => {
+    setDatevLoading(true);
+    try {
+      const stats = await api.datevExportPreview(datevYear);
+      setDatevPreview(stats);
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setDatevLoading(false);
+    }
+  };
+
   const incomeActive = allCategories.filter(c => c.type === 'income' && c.is_active);
   const incomeInactive = allCategories.filter(c => c.type === 'income' && !c.is_active);
   const expenseActive = allCategories.filter(c => c.type === 'expense' && c.is_active);
   const expenseInactive = allCategories.filter(c => c.type === 'expense' && !c.is_active);
+  const activeCategories = allCategories.filter(c => c.is_active);
 
   return (
     <div>
@@ -388,7 +451,7 @@ export default function Settings() {
             ))}
           </select>
           <button
-            onClick={handleExportBackup}
+            onClick={() => handleExportBackup()}
             disabled={backing}
             className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50"
             title="Backup als JSON-Datei im konfigurierten Backup-Ordner speichern (z.B. Google Drive)"
@@ -404,9 +467,9 @@ export default function Settings() {
           </a>
         </div>
         {backupStatus && (
-          <div className={`mb-4 text-sm ${backupStatus.success ? 'text-green-700' : 'text-red-600'}`}>
+          <div className={`mb-4 text-sm ${backupStatus.success ? (backupStatus.skipped ? 'text-gray-500' : 'text-green-700') : 'text-red-600'}`}>
             {backupStatus.success
-              ? `Backup gespeichert: ${backupStatus.path} (${backupStatus.count} Buchungen)`
+              ? (backupStatus.skipped ? 'Backup übersprungen — identisches Backup vorhanden.' : `Backup gespeichert: ${backupStatus.path} (${backupStatus.count} Buchungen)`)
               : `Fehler: ${backupStatus.error}`}
           </div>
         )}
@@ -467,6 +530,150 @@ export default function Settings() {
               {importStatus.success
                 ? `Import abgeschlossen: ${importStatus.imported} importiert, ${importStatus.skipped} übersprungen (von ${importStatus.total} gesamt)`
                 : `Fehler: ${importStatus.error}`}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* DATEV Export */}
+      <section className="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-3">DATEV Export</h2>
+
+        {/* Beraternr + Mandantnr */}
+        <div className="flex items-center gap-4 mb-4">
+          <label className="text-sm text-gray-600">
+            Beraternummer:
+            <input
+              value={datevBeraternr}
+              onChange={e => setDatevBeraternr(e.target.value)}
+              className="border rounded px-2 py-1 text-sm ml-1 w-28"
+              placeholder="z.B. 1234"
+            />
+          </label>
+          <label className="text-sm text-gray-600">
+            Mandantennummer:
+            <input
+              value={datevMandantnr}
+              onChange={e => setDatevMandantnr(e.target.value)}
+              className="border rounded px-2 py-1 text-sm ml-1 w-28"
+              placeholder="z.B. 5678"
+            />
+          </label>
+          <button
+            onClick={handleSaveDatevSettings}
+            disabled={datevSaving}
+            className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+            title="Beraternummer und Mandantennummer speichern — werden im EXTF-Header der Exportdateien verwendet"
+          >
+            {datevSaving ? '...' : 'Speichern'}
+          </button>
+          {datevSaved && <span className="text-sm text-green-600">Gespeichert</span>}
+        </div>
+
+        {/* Sachkonten-Zuordnung */}
+        <div className="mb-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Sachkonten-Zuordnung (SKR 03)</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h4 className="text-xs font-medium text-green-700 mb-1">Einnahmen</h4>
+              <table className="w-full text-sm">
+                <tbody>
+                  {activeCategories.filter(c => c.type === 'income').map(cat => (
+                    <tr key={cat.id} className="border-b border-gray-100">
+                      <td className="py-1 pr-2 text-gray-700">{cat.name}</td>
+                      <td className="py-1 w-24">
+                        <input
+                          defaultValue={cat.datev_account || ''}
+                          onBlur={e => {
+                            if (e.target.value !== (cat.datev_account || '')) {
+                              handleSachkontoBlur(cat.id, e.target.value);
+                            }
+                          }}
+                          className="border rounded px-2 py-0.5 text-sm w-full font-mono"
+                          placeholder="Konto"
+                          disabled={sachkontenSaving[cat.id]}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <h4 className="text-xs font-medium text-red-700 mb-1">Ausgaben</h4>
+              <table className="w-full text-sm">
+                <tbody>
+                  {activeCategories.filter(c => c.type === 'expense').map(cat => (
+                    <tr key={cat.id} className="border-b border-gray-100">
+                      <td className="py-1 pr-2 text-gray-700">{cat.name}</td>
+                      <td className="py-1 w-24">
+                        <input
+                          defaultValue={cat.datev_account || ''}
+                          onBlur={e => {
+                            if (e.target.value !== (cat.datev_account || '')) {
+                              handleSachkontoBlur(cat.id, e.target.value);
+                            }
+                          }}
+                          className="border rounded px-2 py-0.5 text-sm w-full font-mono"
+                          placeholder="Konto"
+                          disabled={sachkontenSaving[cat.id]}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Export */}
+        <div className="border-t pt-4">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-sm text-gray-600">Jahr:</span>
+            <select
+              value={datevYear}
+              onChange={e => { setDatevYear(e.target.value); sessionStorage.setItem('datevYear', e.target.value); setDatevPreview(null); }}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              {Array.from({ length: now.getFullYear() - 2017 }, (_, i) => String(now.getFullYear() - i)).map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            <a
+              href={api.datevBuchungsstapelUrl(datevYear)}
+              className="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700"
+              title="EXTF-Buchungsstapel als CSV herunterladen — enthält alle Buchungen mit zugeordneten Sachkonten"
+            >
+              Buchungsstapel exportieren
+            </a>
+            <a
+              href={api.datevKontenbeschriftungenUrl(datevYear)}
+              className="border border-gray-300 text-gray-600 px-3 py-1.5 rounded text-sm hover:bg-gray-50"
+              title="EXTF-Kontenbeschriftungen als CSV herunterladen — Sachkonten-Bezeichnungen für DATEV-Import"
+            >
+              Kontenbeschriftungen exportieren
+            </a>
+            <button
+              onClick={handleDatevPreview}
+              disabled={datevLoading}
+              className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
+              title="Zeigt wie viele Buchungen exportiert werden und welche Kategorien noch kein DATEV-Konto haben"
+            >
+              {datevLoading ? '...' : 'Export-Vorschau'}
+            </button>
+          </div>
+          {datevPreview && (
+            <div className="text-sm bg-gray-50 rounded p-3">
+              <div className="text-gray-700">
+                <strong>{datevPreview.exported}</strong> Buchungen werden exportiert,{' '}
+                <strong>{datevPreview.skipped}</strong> übersprungen (von {datevPreview.total} gesamt)
+              </div>
+              {datevPreview.unmappedCategories.length > 0 && (
+                <div className="text-amber-600 mt-1">
+                  Ohne DATEV-Konto: {datevPreview.unmappedCategories.join(', ')}
+                </div>
+              )}
             </div>
           )}
         </div>

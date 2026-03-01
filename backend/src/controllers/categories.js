@@ -21,19 +21,19 @@ function listByType(req, res) {
 }
 
 function create(req, res) {
-  const { name, type, description, sort_order } = req.body;
+  const { name, type, description, sort_order, datev_account } = req.body;
   if (!name || !type) {
     return res.status(400).json({ error: 'Name and type are required' });
   }
   const db = getDatabase();
-  const result = db.prepare('INSERT INTO categories (name, type, description, sort_order) VALUES (?, ?, ?, ?)').run(name, type, description || null, sort_order || 0);
+  const result = db.prepare('INSERT INTO categories (name, type, description, sort_order, datev_account) VALUES (?, ?, ?, ?, ?)').run(name, type, description || null, sort_order || 0, datev_account || null);
   const category = db.prepare('SELECT * FROM categories WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json(category);
 }
 
 function update(req, res) {
   const { id } = req.params;
-  const { name, description, sort_order, is_active } = req.body;
+  const { name, description, sort_order, is_active, datev_account } = req.body;
   const db = getDatabase();
 
   const existing = db.prepare('SELECT * FROM categories WHERE id = ?').get(id);
@@ -41,11 +41,12 @@ function update(req, res) {
     return res.status(404).json({ error: 'Category not found' });
   }
 
-  db.prepare('UPDATE categories SET name = ?, description = ?, sort_order = ?, is_active = ? WHERE id = ?').run(
+  db.prepare('UPDATE categories SET name = ?, description = ?, sort_order = ?, is_active = ?, datev_account = ? WHERE id = ?').run(
     name ?? existing.name,
     description ?? existing.description,
     sort_order ?? existing.sort_order,
     is_active ?? existing.is_active,
+    datev_account !== undefined ? (datev_account || null) : existing.datev_account,
     id
   );
 

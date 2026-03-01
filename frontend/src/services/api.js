@@ -70,8 +70,15 @@ export const api = {
   getBackupFiles: () => request('/backup/files'),
   exportCategories: () => request('/backup/categories-export', { method: 'POST' }),
   categoriesDownloadUrl: () => `${BASE_URL}/backup/categories-download`,
-  exportBackup: (year) => request('/backup/export', { method: 'POST', body: JSON.stringify({ year: year || 'all' }) }),
+  exportBackup: (year, force) => request('/backup/export', { method: 'POST', body: JSON.stringify({ year: year || 'all', force: force || false }) }),
   dbCopy: () => request('/backup/db-copy', { method: 'POST' }),
   importBackup: (filename) => request('/backup/import', { method: 'POST', body: JSON.stringify({ filename }) }),
   uploadBackup: (data) => request('/backup/upload', { method: 'POST', body: JSON.stringify(data) }),
+
+  // DATEV
+  getDatevSettings: () => request('/datev/settings'),
+  saveDatevSettings: (data) => request('/datev/settings', { method: 'PUT', body: JSON.stringify(data) }),
+  datevBuchungsstapelUrl: (year) => `${BASE_URL}/datev/export/buchungsstapel?year=${year}`,
+  datevKontenbeschriftungenUrl: (year) => `${BASE_URL}/datev/export/kontenbeschriftungen?year=${year}`,
+  datevExportPreview: (year) => request(`/datev/export/preview?year=${year}`),
 };

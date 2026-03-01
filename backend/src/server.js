@@ -10,6 +10,7 @@ const descriptionsRouter = require('./routes/descriptions');
 const totalsRouter = require('./routes/totals');
 const reportsRouter = require('./routes/reports');
 const importRouter = require('./routes/import');
+const datevRouter = require('./routes/datev');
 
 const app = express();
 const PORT = process.env.PORT || 3020;
@@ -32,6 +33,7 @@ app.use('/api/descriptions', descriptionsRouter);
 app.use('/api/totals', totalsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/import', importRouter);
+app.use('/api/datev', datevRouter);
 
 // --- Backup path helpers ---
 function getBackupPath() {
@@ -151,9 +153,11 @@ app.get('/api/backup/categories-download', (req, res) => {
 app.post('/api/backup/export', (req, res) => {
   try {
     const fs = require('fs');
+    const crypto = require('crypto');
     const { getDatabase } = require('./config/database');
     const db = getDatabase();
     const yearParam = req.body.year;
+    const force = req.body.force === true;
 
     const resolvedPath = getBackupPath();
     if (!resolvedPath) return res.status(500).json({ error: 'Backup-Pfad nicht konfiguriert' });
@@ -171,6 +175,35 @@ app.post('/api/backup/export', (req, res) => {
       transactions = db.prepare('SELECT * FROM transactions ORDER BY date, id').all();
     }
 
+    // Compute checksum from data content (excluding timestamps)
+    const checksumData = JSON.stringify({ categories, transactions });
+    const checksum = crypto.createHash('md5').update(checksumData).digest('hex');
+
+    // Check existing backups for duplicate checksum (unless force)
+    if (!force) {
+      const yearLabel = yearParam && yearParam !== 'all' ? yearParam : 'all';
+      const existingFiles = fs.readdirSync(resolvedPath)
+        .filter(f => f.endsWith('.json') && f.startsWith('backup_'))
+        .sort()
+        .reverse();
+
+      for (const file of existingFiles) {
+        try {
+          const content = JSON.parse(fs.readFileSync(path.join(resolvedPath, file), 'utf-8'));
+          const existingData = JSON.stringify({ categories: content.categories, transactions: content.transactions });
+          const existingChecksum = crypto.createHash('md5').update(existingData).digest('hex');
+          if (existingChecksum === checksum) {
+            return res.json({
+              duplicate: true,
+              existingFile: file,
+              checksum,
+              message: `Identisches Backup existiert bereits: ${file}`,
+            });
+          }
+        } catch {}
+      }
+    }
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const backup = {
       version: 1,
@@ -185,7 +218,7 @@ app.post('/api/backup/export', (req, res) => {
     const destFile = path.join(resolvedPath, filename);
     fs.writeFileSync(destFile, JSON.stringify(backup, null, 2), 'utf-8');
 
-    res.json({ success: true, path: destFile, transactions: transactions.length });
+    res.json({ success: true, path: destFile, transactions: transactions.length, checksum });
   } catch (err) {
     console.error('Backup export error:', err);
     res.status(500).json({ error: 'Backup export failed: ' + err.message });
