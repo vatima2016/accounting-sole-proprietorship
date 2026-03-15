@@ -75,8 +75,9 @@ Startet Backend (http://localhost:3020) und Frontend (http://localhost:5173). St
 6. **Anwendung starten:**
    ```bash
    # Von Root-Verzeichnis
-   npm run dev
+   ./start.sh        # oder: npm run dev
    ```
+   Stoppen mit `npm stop` oder `Ctrl+C`.
 
 Die Anwendung läuft auf:
 - Frontend: http://localhost:5173
