@@ -26,7 +26,7 @@ const transactionQueryRules = [
   query('page').optional().isInt({ min: 1 }),
   query('limit').optional().isInt({ min: 1, max: 100 }),
   query('search_amount').optional().isFloat({ gt: 0 }).withMessage('Search amount must be a positive number'),
-  query('search_invoice').optional().trim().notEmpty(),
+  query('search_invoice').optional().trim().notEmpty().isLength({ max: 100 }),
   query('search_date').optional().isISO8601().withMessage('Search date must be YYYY-MM-DD'),
 ];
 

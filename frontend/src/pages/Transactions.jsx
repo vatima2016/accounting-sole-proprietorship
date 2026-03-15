@@ -96,7 +96,7 @@ export default function Transactions() {
       setSortKey(key);
       setSortDir(newDir);
     }
-    localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify({ key: sortKey === key ? key : key, dir: newDir }));
+    localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify({ key, dir: newDir }));
   };
 
   const handleRowClick = (transaction) => {

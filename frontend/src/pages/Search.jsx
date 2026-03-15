@@ -93,6 +93,7 @@ export default function Search() {
 
   useEffect(() => {
     if (hasSearched) fetchResults();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, sortKey, sortDir, pageSize]);
 
   const handleSort = (key) => {
