@@ -11,7 +11,7 @@ const columns = [
   { label: 'Beleg-Nr.', key: 'invoice_number' },
 ];
 
-export default function TransactionList({ transactions, onRowClick, sortKey, sortDir, onSort }) {
+export default function TransactionList({ transactions, onRowClick, sortKey, sortDir, onSort, highlightId }) {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <table className="w-full">
@@ -40,7 +40,7 @@ export default function TransactionList({ transactions, onRowClick, sortKey, sor
             </tr>
           ) : (
             transactions.map((t) => (
-              <TransactionRow key={t.id} transaction={t} onClick={onRowClick} />
+              <TransactionRow key={t.id} transaction={t} onClick={onRowClick} highlight={t.id === highlightId} />
             ))
           )}
         </tbody>

@@ -7,6 +7,7 @@ import PeriodSelector from '../components/common/PeriodSelector';
 import { getPeriodDates } from '../utils/period';
 
 const STORAGE_KEY = 'periodParams';
+const SORT_STORAGE_KEY = 'transactionSort';
 
 function loadPeriodParams() {
   try {
@@ -28,11 +29,16 @@ export default function Transactions() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [sortKey, setSortKey] = useState('date');
-  const [sortDir, setSortDir] = useState('desc');
+  const [sortKey, setSortKey] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(SORT_STORAGE_KEY))?.key || 'date'; } catch { return 'date'; }
+  });
+  const [sortDir, setSortDir] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(SORT_STORAGE_KEY))?.dir || 'desc'; } catch { return 'desc'; }
+  });
   const [editTransaction, setEditTransaction] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [totalsKey, setTotalsKey] = useState(0);
+  const [highlightId, setHighlightId] = useState(null);
   const [pageSize, setPageSize] = useState(20);
   const [typeFilter, setTypeFilter] = useState('');
   const tableContainerRef = useRef(null);
@@ -81,12 +87,16 @@ export default function Transactions() {
 
   const handleSort = (key) => {
     setPage(1);
+    let newDir;
     if (sortKey === key) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+      newDir = sortDir === 'asc' ? 'desc' : 'asc';
+      setSortDir(newDir);
     } else {
+      newDir = 'asc';
       setSortKey(key);
-      setSortDir('asc');
+      setSortDir(newDir);
     }
+    localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify({ key: sortKey === key ? key : key, dir: newDir }));
   };
 
   const handleRowClick = (transaction) => {
@@ -99,9 +109,10 @@ export default function Transactions() {
     setShowForm(true);
   };
 
-  const handleSaved = () => {
+  const handleSaved = (savedId) => {
     setShowForm(false);
     setEditTransaction(null);
+    setHighlightId(savedId ?? null);
     fetchTransactions();
     setTotalsKey(k => k + 1);
   };
@@ -157,6 +168,7 @@ export default function Transactions() {
               sortKey={sortKey}
               sortDir={sortDir}
               onSort={handleSort}
+              highlightId={highlightId}
             />
           </div>
           {total > pageSize && (() => {

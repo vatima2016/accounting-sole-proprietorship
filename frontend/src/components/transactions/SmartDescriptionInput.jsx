@@ -57,7 +57,7 @@ export default function SmartDescriptionInput({ value, onChange, categoryId, cla
   };
 
   const handleSelect = (suggestion) => {
-    onChange(suggestion.description, suggestion.vat_rate, suggestion.last_amount);
+    onChange(suggestion.description, suggestion.vat_rate, suggestion.last_amount, suggestion.last_invoice_number);
     setShowSuggestions(false);
     setSuggestions([]);
   };
@@ -132,6 +132,9 @@ export default function SmartDescriptionInput({ value, onChange, categoryId, cla
             >
               <span>{highlightMatch(s.description)}</span>
               <span className="flex items-center gap-2">
+                {s.last_invoice_number && (
+                  <span className="text-xs text-gray-500 font-mono">{s.last_invoice_number}</span>
+                )}
                 {s.last_amount != null && (
                   <span className="text-xs text-green-600 font-medium">{Number(s.last_amount).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
                 )}

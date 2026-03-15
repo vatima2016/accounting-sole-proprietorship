@@ -1,8 +1,9 @@
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊' },
   { to: '/transactions', label: 'Buchungen', icon: '📋' },
+  { to: '/search', label: 'Suche', icon: '🔍' },
   { to: '/reports', label: 'Berichte', icon: '📈' },
   { to: '/import', label: 'Import', icon: '📥' },
   { to: '/settings', label: 'Einstellungen', icon: '⚙️' },
@@ -10,7 +11,10 @@ const navItems = [
 
 export default function Sidebar() {
   return (
-    <aside className="w-56 bg-gray-50 border-r border-gray-200 min-h-[calc(100vh-52px)]">
+    <aside className="w-56 bg-gray-50 border-r border-gray-200 min-h-screen flex-shrink-0">
+      <Link to="/" className="block px-4 py-4 text-lg font-bold text-blue-700 tracking-tight border-b border-gray-200">
+        Buchhaltung
+      </Link>
       <nav className="py-4">
         {navItems.map((item) => (
           <NavLink

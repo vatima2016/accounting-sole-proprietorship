@@ -6,12 +6,15 @@ export default function TransactionFormModal({ isOpen, onClose, transaction, onS
   const isEdit = !!transaction;
 
   const handleSave = async (data) => {
+    let savedId;
     if (isEdit) {
       await api.updateTransaction(transaction.id, data);
+      savedId = transaction.id;
     } else {
-      await api.createTransaction(data);
+      const result = await api.createTransaction(data);
+      savedId = result?.id;
     }
-    onSaved();
+    onSaved(savedId);
   };
 
   const handleDelete = async (id) => {
