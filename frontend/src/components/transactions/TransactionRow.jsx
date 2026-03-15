@@ -1,12 +1,12 @@
 import { formatCurrency, formatDate } from '../../utils/formatting';
 
-export default function TransactionRow({ transaction, onClick }) {
+export default function TransactionRow({ transaction, onClick, highlight }) {
   const isIncome = transaction.transaction_type === 'income';
 
   return (
     <tr
       onClick={() => onClick(transaction)}
-      className="hover:bg-blue-50 cursor-pointer border-b border-gray-100"
+      className={`hover:bg-blue-50 cursor-pointer border-b border-gray-100 ${highlight ? 'bg-gray-100' : ''}`}
     >
       <td className="px-4 py-2.5 text-sm">{formatDate(transaction.date)}</td>
       <td className="px-4 py-2.5 text-sm">{transaction.description}</td>

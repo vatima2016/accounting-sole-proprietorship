@@ -2,6 +2,14 @@
 
 Eine lokale Webanwendung für die Buchhaltung eines Einzelunternehmers mit deutscher Umsatzsteuer-Compliance.
 
+## Schnellstart
+
+```bash
+./start.sh
+```
+
+Startet Backend (http://localhost:3020) und Frontend (http://localhost:5173). Stoppen mit `npm stop`.
+
 ## Features
 
 - ✅ Lokale SQLite-Datenbank mit Google Drive Sync
@@ -67,12 +75,13 @@ Eine lokale Webanwendung für die Buchhaltung eines Einzelunternehmers mit deuts
 6. **Anwendung starten:**
    ```bash
    # Von Root-Verzeichnis
-   npm run dev
+   ./start.sh        # oder: npm run dev
    ```
+   Stoppen mit `npm stop` oder `Ctrl+C`.
 
 Die Anwendung läuft auf:
 - Frontend: http://localhost:5173
-- Backend: http://localhost:3001
+- Backend: http://localhost:3020
 
 ## Projektstruktur
 
@@ -213,7 +222,7 @@ server: { port: 5174 }
 pkill node
 
 # Oder spezifisch
-lsof -ti:3001 | xargs kill -9
+lsof -ti:3020 | xargs kill -9
 ```
 
 ### Google Drive Sync-Probleme

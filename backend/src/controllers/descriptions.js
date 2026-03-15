@@ -17,7 +17,8 @@ function suggest(req, res) {
       SELECT dh.description, dh.usage_count,
         dcu.usage_count as category_usage,
         dcu.vat_rate,
-        dcu.last_amount_cents
+        dcu.last_amount_cents,
+        dcu.last_invoice_number
       FROM description_category_usage dcu
       JOIN description_history dh ON dh.description = dcu.description
       WHERE dcu.category_id = ?
@@ -30,7 +31,8 @@ function suggest(req, res) {
       SELECT dh.description, dh.usage_count,
         COALESCE(dcu.usage_count, 0) as category_usage,
         dcu.vat_rate,
-        dcu.last_amount_cents
+        dcu.last_amount_cents,
+        dcu.last_invoice_number
       FROM description_history dh
       LEFT JOIN description_category_usage dcu
         ON dh.description = dcu.description AND dcu.category_id = ?
@@ -40,7 +42,7 @@ function suggest(req, res) {
     `).all(Number(category_id), `%${q}%`, Number(limit));
   } else {
     results = db.prepare(`
-      SELECT description, usage_count, 0 as category_usage, NULL as vat_rate, NULL as last_amount_cents
+      SELECT description, usage_count, 0 as category_usage, NULL as vat_rate, NULL as last_amount_cents, NULL as last_invoice_number
       FROM description_history
       WHERE description LIKE ?
       ORDER BY usage_count DESC, last_used_at DESC
@@ -58,7 +60,7 @@ function suggest(req, res) {
 
 function track(req, res) {
   const db = getDatabase();
-  const { description, category_id, vat_rate, gross_amount } = req.body;
+  const { description, category_id, vat_rate, gross_amount, invoice_number } = req.body;
 
   if (!description) return res.status(400).json({ error: 'Description required' });
 
@@ -74,17 +76,18 @@ function track(req, res) {
       last_used_at = ?
   `).run(description, now, now, now);
 
-  // Upsert description_category_usage with vat_rate and amount
+  // Upsert description_category_usage with vat_rate, amount and invoice_number
   if (category_id) {
     db.prepare(`
-      INSERT INTO description_category_usage (description, category_id, usage_count, last_used_at, vat_rate, last_amount_cents)
-      VALUES (?, ?, 1, ?, ?, ?)
+      INSERT INTO description_category_usage (description, category_id, usage_count, last_used_at, vat_rate, last_amount_cents, last_invoice_number)
+      VALUES (?, ?, 1, ?, ?, ?, ?)
       ON CONFLICT(description, category_id) DO UPDATE SET
         usage_count = usage_count + 1,
         last_used_at = ?,
         vat_rate = ?,
-        last_amount_cents = ?
-    `).run(description, category_id, now, vat_rate ?? null, amountCents, now, vat_rate ?? null, amountCents);
+        last_amount_cents = ?,
+        last_invoice_number = ?
+    `).run(description, category_id, now, vat_rate ?? null, amountCents, invoice_number || null, now, vat_rate ?? null, amountCents, invoice_number || null);
   }
 
   res.json({ success: true });

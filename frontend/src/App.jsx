@@ -5,6 +5,7 @@ import Transactions from './pages/Transactions';
 import Reports from './pages/Reports';
 import Import from './pages/Import';
 import Settings from './pages/Settings';
+import Search from './pages/Search';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="transactions" element={<Transactions />} />
+          <Route path="search" element={<Search />} />
           <Route path="reports" element={<Reports />} />
           <Route path="import" element={<Import />} />
           <Route path="settings" element={<Settings />} />

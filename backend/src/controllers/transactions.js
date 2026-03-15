@@ -39,7 +39,7 @@ const SORT_COLUMNS = {
 
 function list(req, res) {
   const db = getDatabase();
-  const { start_date, end_date, type, category_id, page = 1, limit = 50, sort, dir } = req.query;
+  const { start_date, end_date, type, category_id, page = 1, limit = 50, sort, dir, search_amount, search_invoice, search_date } = req.query;
 
   let where = [];
   let params = [];
@@ -48,6 +48,9 @@ function list(req, res) {
   if (end_date) { where.push('t.date <= ?'); params.push(end_date); }
   if (type) { where.push('t.transaction_type = ?'); params.push(type); }
   if (category_id) { where.push('t.category_id = ?'); params.push(Number(category_id)); }
+  if (search_amount) { where.push('t.gross_amount_cents = ?'); params.push(eurosToCents(parseFloat(search_amount))); }
+  if (search_invoice) { where.push('t.invoice_number LIKE ?'); params.push(`%${search_invoice}%`); }
+  if (search_date) { where.push('t.date = ?'); params.push(search_date); }
 
   const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
   const offset = (Number(page) - 1) * Number(limit);

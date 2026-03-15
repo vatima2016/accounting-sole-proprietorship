@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCategories } from '../../hooks/useCategories';
-import { validateTransaction } from '../../utils/validation';
+import { validateTransaction, parseAmountExpression } from '../../utils/validation';
 import { api } from '../../services/api';
 import CalculationDisplay from './CalculationDisplay';
 import SmartDescriptionInput from './SmartDescriptionInput';
 
 const LAST_CATEGORY_KEY = 'lastUsedCategory';
+const LAST_DATE_KEY = 'lastTransactionDate';
 
 function getLastCategory(type) {
   try {
@@ -27,7 +28,7 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
   const isEdit = !!transaction;
 
   const [form, setForm] = useState({
-    date: transaction?.date || new Date().toISOString().split('T')[0],
+    date: transaction?.date || localStorage.getItem(LAST_DATE_KEY) || new Date().toISOString().split('T')[0],
     transaction_type: transaction?.transaction_type || 'expense',
     category_id: transaction?.category_id || '',
     description: transaction?.description || '',
@@ -75,6 +76,7 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
             const autoFill = { description: s.description };
             if (s.vat_rate != null && !(cat?.name in lockedVatRates)) autoFill.vat_rate = s.vat_rate;
             if (s.last_amount != null) autoFill.gross_amount = String(s.last_amount).replace('.', ',');
+            if (s.last_invoice_number != null) autoFill.invoice_number = s.last_invoice_number;
             setForm(f => ({ ...f, ...autoFill }));
           }
         }).catch(() => {});
@@ -89,15 +91,19 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
 
     setSaving(true);
     try {
+      const { total, isNet } = parseAmountExpression(form.gross_amount);
+      const vatRate = Number(form.vat_rate);
+      const gross = isNet ? Math.round(total * (1 + vatRate / 100) * 100) / 100 : total;
       const data = {
         ...form,
-        gross_amount: Number(String(form.gross_amount).replace(',', '.')),
-        vat_rate: Number(form.vat_rate),
+        gross_amount: gross,
+        vat_rate: vatRate,
         category_id: Number(form.category_id),
       };
       await onSave(data);
       saveLastCategory(form.transaction_type, form.category_id);
-      api.trackDescription({ description: form.description, category_id: data.category_id, vat_rate: data.vat_rate, gross_amount: data.gross_amount }).catch(() => {});
+      localStorage.setItem(LAST_DATE_KEY, form.date);
+      api.trackDescription({ description: form.description, category_id: data.category_id, vat_rate: data.vat_rate, gross_amount: data.gross_amount, invoice_number: form.invoice_number || null }).catch(() => {});
     } catch (err) {
       setErrors({ submit: err.message });
     } finally {
@@ -142,7 +148,7 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
         <label className="block text-sm font-medium text-gray-700 mb-1">Beschreibung *</label>
         <SmartDescriptionInput
           value={form.description}
-          onChange={(val, suggestedVatRate, lastAmount) => {
+          onChange={(val, suggestedVatRate, lastAmount, lastInvoiceNumber) => {
             handleChange('description', val);
             const updates = {};
             if (suggestedVatRate != null && !vatLocked) {
@@ -150,6 +156,9 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
             }
             if (lastAmount != null) {
               updates.gross_amount = String(lastAmount).replace('.', ',');
+            }
+            if (lastInvoiceNumber != null) {
+              updates.invoice_number = lastInvoiceNumber;
             }
             if (Object.keys(updates).length > 0) {
               setForm(f => ({ ...f, ...updates }));
@@ -171,10 +180,10 @@ export default function TransactionForm({ transaction, onSave, onDelete, onCance
               inputMode="decimal"
               value={form.gross_amount}
               onChange={(e) => {
-                const val = e.target.value.replace(/[^0-9.,]/g, '');
+                const val = e.target.value.replace(/[^0-9.,+\-*() =Nn]/g, '');
                 handleChange('gross_amount', val);
               }}
-              placeholder="0,00"
+              placeholder="0,00 oder N59,75 (Netto)"
               className={`${inputClass('gross_amount')} pr-8`}
             />
             {form.gross_amount && (
