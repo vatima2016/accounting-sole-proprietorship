@@ -190,24 +190,35 @@ export default function Dashboard() {
   const [totals, setTotals] = useState(null);
   const [ytdTotals, setYtdTotals] = useState(null);
   const [recentTransactions, setRecentTransactions] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState(() => {
+    try { return localStorage.getItem('dashboardPeriod') || String(new Date().getMonth() + 1); } catch { return String(new Date().getMonth() + 1); }
+  });
+  const [selectedYear, setSelectedYear] = useState(() => {
+    try { return Number(localStorage.getItem('dashboardSelectedYear')) || new Date().getFullYear(); } catch { return new Date().getFullYear(); }
+  });
   const [chartYear, setChartYear] = useState(() => {
     try { return Number(localStorage.getItem('dashboardYear')) || new Date().getFullYear(); } catch { return new Date().getFullYear(); }
   });
   const updateChartYear = (y) => { setChartYear(y); localStorage.setItem('dashboardYear', y); };
+  const updatePeriod = (p) => { setSelectedPeriod(p); localStorage.setItem('dashboardPeriod', p); };
+  const updateYear = (y) => { setSelectedYear(y); localStorage.setItem('dashboardSelectedYear', y); };
+
+  const isQuarter = selectedPeriod.startsWith('q');
+  const periodParams = isQuarter
+    ? { period: 'quarter', year: selectedYear, quarter: Number(selectedPeriod[1]) }
+    : { period: 'month', year: selectedYear, month: Number(selectedPeriod) };
   const [yearlyReport, setYearlyReport] = useState(null);
   const [yearlySummaries, setYearlySummaries] = useState([]);
 
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
+  const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 2017 }, (_, i) => currentYear - i);
 
   useEffect(() => {
-    api.getTotals({ period: 'month', year: currentYear, month: currentMonth }).then(setTotals).catch(console.error);
-    api.getTotals({ period: 'year', year: currentYear }).then(setYtdTotals).catch(console.error);
+    api.getTotals(periodParams).then(setTotals).catch(console.error);
+    api.getTotals({ period: 'year', year: selectedYear }).then(setYtdTotals).catch(console.error);
     api.getTransactions({ limit: 5 }).then(r => setRecentTransactions(r.data)).catch(console.error);
     api.getYearlySummaries(2018).then(setYearlySummaries).catch(console.error);
-  }, []);
+  }, [selectedYear, selectedPeriod]);
 
   useEffect(() => {
     api.getYearlyReport(chartYear).then(setYearlyReport).catch(console.error);
@@ -220,9 +231,21 @@ export default function Dashboard() {
       {/* Current Month */}
       {totals && (
         <div className="mb-6">
-          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-            {getMonthName(currentMonth)} {currentYear}
-          </h2>
+          <div className="flex items-center gap-2 mb-3">
+            <select value={selectedPeriod} onChange={(e) => updatePeriod(e.target.value)} className="border rounded px-2 py-1 text-sm">
+              {Array.from({ length: 12 }, (_, i) => (
+                <option key={i + 1} value={String(i + 1)}>{getMonthName(i + 1)}</option>
+              ))}
+              <option disabled>──────────</option>
+              <option value="q1">Q1 (Jan–Mär)</option>
+              <option value="q2">Q2 (Apr–Jun)</option>
+              <option value="q3">Q3 (Jul–Sep)</option>
+              <option value="q4">Q4 (Okt–Dez)</option>
+            </select>
+            <select value={selectedYear} onChange={(e) => updateYear(Number(e.target.value))} className="border rounded px-2 py-1 text-sm">
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
           <div className="grid grid-cols-4 gap-4">
             <Card label="Einnahmen" value={totals.income.gross} color="text-green-700" bg="bg-green-50" />
             <Card label="Ausgaben" value={totals.expenses.gross} color="text-red-700" bg="bg-red-50" />
@@ -236,7 +259,7 @@ export default function Dashboard() {
       {ytdTotals && (
         <div className="mb-6">
           <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-            Jahr {currentYear} (kumuliert)
+            Jahr {selectedYear} (kumuliert)
           </h2>
           <div className="grid grid-cols-4 gap-4">
             <Card label="Einnahmen" value={ytdTotals.income.gross} color="text-green-700" bg="bg-green-50" />
