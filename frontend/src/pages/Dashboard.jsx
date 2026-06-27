@@ -203,10 +203,13 @@ export default function Dashboard() {
   const updatePeriod = (p) => { setSelectedPeriod(p); localStorage.setItem('dashboardPeriod', p); };
   const updateYear = (y) => { setSelectedYear(y); localStorage.setItem('dashboardSelectedYear', y); };
 
+  const isYear = selectedPeriod === 'year';
   const isQuarter = selectedPeriod.startsWith('q');
-  const periodParams = isQuarter
-    ? { period: 'quarter', year: selectedYear, quarter: Number(selectedPeriod[1]) }
-    : { period: 'month', year: selectedYear, month: Number(selectedPeriod) };
+  const periodParams = isYear
+    ? { period: 'year', year: selectedYear }
+    : isQuarter
+      ? { period: 'quarter', year: selectedYear, quarter: Number(selectedPeriod[1]) }
+      : { period: 'month', year: selectedYear, month: Number(selectedPeriod) };
   const [yearlyReport, setYearlyReport] = useState(null);
   const [yearlySummaries, setYearlySummaries] = useState([]);
 
@@ -241,6 +244,8 @@ export default function Dashboard() {
               <option value="q2">Q2 (Apr–Jun)</option>
               <option value="q3">Q3 (Jul–Sep)</option>
               <option value="q4">Q4 (Okt–Dez)</option>
+              <option disabled>──────────</option>
+              <option value="year">Ganzes Jahr</option>
             </select>
             <select value={selectedYear} onChange={(e) => updateYear(Number(e.target.value))} className="border rounded px-2 py-1 text-sm">
               {years.map(y => <option key={y} value={y}>{y}</option>)}
